@@ -81,3 +81,50 @@ def plot_learning_curves(
     plt.tight_layout()
     
     return fig, axes
+
+
+def plot_confusion_matrix(
+    true_labels: np.ndarray,
+    predictions: np.ndarray,
+    class_names: list[str],
+    figsize: tuple[float, float] = (8, 8),
+    cmap: str = 'Blues'
+) -> tuple[plt.Figure, plt.Axes]:
+    '''Plot a confusion matrix heatmap.
+    
+    Args:
+        true_labels: Array of true class labels.
+        predictions: Array of predicted class labels.
+        class_names: List of class names for labeling.
+        figsize: Figure size (width, height).
+        cmap: Colormap for the heatmap.
+        
+    Returns:
+        Tuple of (figure, axes).
+    '''
+    from sklearn.metrics import confusion_matrix
+    
+    cm = confusion_matrix(true_labels, predictions)
+    
+    fig, ax = plt.subplots(figsize=figsize)
+
+    ax.set_title('Confusion matrix')
+    im = ax.imshow(cm, cmap=cmap)
+
+    # Add labels
+    ax.set_xticks(range(len(class_names)))
+    ax.set_yticks(range(len(class_names)))
+    ax.set_xticklabels(class_names, rotation=45, ha='right')
+    ax.set_yticklabels(class_names)
+    ax.set_xlabel('Predicted label')
+    ax.set_ylabel('True label')
+
+    # Add text annotations
+    for i in range(len(class_names)):
+        for j in range(len(class_names)):
+            color = 'white' if cm[i, j] > cm.max() / 2 else 'black'
+            ax.text(j, i, str(cm[i, j]), ha='center', va='center', color=color)
+
+    plt.tight_layout()
+    
+    return fig, ax
