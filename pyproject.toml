@@ -1,0 +1,44 @@
+[build-system]
+requires = ["poetry-core>=1.9.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "cifar10_tools"
+version = "0.1.0"
+description = "Tools for training neural networks on the CIFAR-10 task with PyTorch and TensorFlow"
+authors = ["gperdrizet <george@perdrizet.org>"]
+readme = "README.md"
+license = "GPLv3"
+packages = [{include = "cifar10_tools", from = "src"}]
+exclude = ["notebooks", "models", "logs"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+]
+keywords = ["Python", "Machine learning", "Deep learning", "CNNs", "Computer vision", "Image classification", "CIFAR-10"]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+torch = ">=2.0"
+torchvision = ">=0.15"
+numpy = ">=1.24"
+
+[tool.poetry.extras]
+tensorflow = ["tensorflow"]
+
+[tool.poetry.urls]
+Homepage = "https://github.com/gperdrizet/CIFAR10"
+Documentation = "https://gperdrizet.github.io/CIFAR10/README.md"
+Repository = "https://github.com/gperdrizet/CIFAR10"
+Issues = "https://github.com/gperdrizet/CIFAR10/issues"
+PyPI = "https://pypi.org/project/cifar10_tools"

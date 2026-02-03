@@ -1,0 +1,83 @@
+# Workflow to automatically build and publish Python package to PyPI
+# This workflow is triggered on release publication or manual dispatch
+name: Publish to PyPI
+
+# Define trigger conditions
+on:
+
+  # Trigger when a GitHub Release is published
+  release:
+    types: [published]
+
+  # Allow manual trigger from the GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+
+  # Main job: build distribution packages and publish to PyPI
+  build-and-publish:
+    name: Build and publish to PyPI
+    runs-on: ubuntu-latest
+
+    # Use the 'pypi' environment for trusted publishing (requires OIDC setup)
+    environment: pypi
+
+    # Define permissions needed for this workflow
+    permissions:
+      contents: read  # Read repository contents
+      id-token: write  # Required for OIDC trusted publishing token generation
+    
+    steps:
+
+    # Step 1: Clone the repository to access source code and configuration files
+    - name: Checkout code
+      uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+    
+    # Step 2: Install Python runtime (version 3.12)
+    - name: Set up Python
+      uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+      with:
+        python-version: '3.12'
+    
+    # Step 3: Install required build tools
+    # - pip: Package installer for dependencies
+    # - build: Tool to build Python packages (wheel and sdist formats)
+    # - twine: Tool to validate and upload packages to PyPI
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+    
+    # Step 4: Validate that the release tag version matches the package version
+    # in pyproject.toml. This prevents accidental version mismatches between the
+    # GitHub Release tag and the package
+    - name: Verify version tag
+      run: |
+        # Extract version from the GitHub release tag (e.g., v1.2.3 -> 1.2.3 or 1.2.3 -> 1.2.3)
+        TAG_VERSION=${GITHUB_REF#refs/tags/}
+        TAG_VERSION=${TAG_VERSION#v}
+
+        # Extract version from pyproject.toml [tool.poetry] section
+        PACKAGE_VERSION=$(python -c "import tomllib; data=tomllib.load(open('pyproject.toml','rb')); print(data['tool']['poetry']['version'])")
+        echo "Release tag version: $TAG_VERSION"
+        echo "Package version: $PACKAGE_VERSION"
+
+        # Fail the workflow if versions don't match
+        if [ "$TAG_VERSION" != "$PACKAGE_VERSION" ]; then
+          echo "Error: Release tag version ($TAG_VERSION) does not match package version ($PACKAGE_VERSION)"
+          exit 1
+        fi
+    
+    # Step 5: Build the distribution packages (wheel and source distribution)
+    - name: Build packages
+      run: python -m build
+    
+    # Step 6: Validate the built packages before uploading
+    # Checks for common metadata issues, dependencies, and package integrity
+    - name: Check packages
+      run: twine check dist/*
+    
+    # Step 7: Upload packages to PyPI using GitHub's trusted publishing (OIDC)
+    # This eliminates the need to store PyPI API tokens as secrets
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e
