@@ -173,3 +173,66 @@ def plot_class_probability_distributions(
     plt.tight_layout()
     
     return fig, axes
+
+
+def plot_evaluation_curves(
+    true_labels: np.ndarray,
+    all_probs: np.ndarray,
+    class_names: list[str],
+    figsize: tuple[float, float] = (12, 5)
+) -> tuple[plt.Figure, tuple[plt.Axes, plt.Axes]]:
+    '''Plot ROC and Precision-Recall curves for multi-class classification.
+    
+    Args:
+        true_labels: Array of true class labels.
+        all_probs: Array of shape (n_samples, n_classes) with predicted probabilities.
+        class_names: List of class names for labeling.
+        figsize: Figure size (width, height).
+        
+    Returns:
+        Tuple of (figure, (ax1, ax2)).
+    '''
+    from sklearn.metrics import roc_curve, auc, precision_recall_curve, average_precision_score
+    from sklearn.preprocessing import label_binarize
+    
+    # Binarize true labels for one-vs-rest evaluation
+    y_test_bin = label_binarize(true_labels, classes=range(len(class_names)))
+
+    # Create figure with ROC and PR curves side by side
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
+
+    # Plot ROC curves for each class
+    ax1.set_title('ROC curves (one-vs-rest)')
+
+    for i, class_name in enumerate(class_names):
+        fpr, tpr, _ = roc_curve(y_test_bin[:, i], all_probs[:, i])
+        roc_auc = auc(fpr, tpr)
+        ax1.plot(fpr, tpr, label=class_name)
+
+    ax1.plot([0, 1], [0, 1], 'k--', label='Random classifier')
+    ax1.set_xlabel('False positive rate')
+    ax1.set_ylabel('True positive rate')
+    ax1.legend(loc='lower right', fontsize=12)
+    ax1.set_xlim([0, 1])
+    ax1.set_ylim([0, 1.05])
+
+    # Plot Precision-Recall curves for each class
+    ax2.set_title('Precision-recall curves (one-vs-rest)')
+
+    for i, class_name in enumerate(class_names):
+        precision, recall, _ = precision_recall_curve(y_test_bin[:, i], all_probs[:, i])
+        ap = average_precision_score(y_test_bin[:, i], all_probs[:, i])
+        ax2.plot(recall, precision)
+
+    # Random classifier baseline (horizontal line at class prevalence = 1/num_classes)
+    baseline = 1 / len(class_names)
+    ax2.axhline(y=baseline, color='k', linestyle='--')
+
+    ax2.set_xlabel('Recall')
+    ax2.set_ylabel('Precision')
+    ax2.set_xlim([0, 1])
+    ax2.set_ylim([0, 1.05])
+
+    plt.tight_layout()
+    
+    return fig, (ax1, ax2)
