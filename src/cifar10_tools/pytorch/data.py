@@ -4,7 +4,7 @@ during devcontainer creation'''
 from pathlib import Path
 from torchvision import datasets
 
-def download_cifar10_data(data_dir: str='data/pytorch/CIFAR10'):
+def download_cifar10_data(data_dir: str='data/pytorch/cifar10'):
     '''Download CIFAR-10 dataset using torchvision.datasets.'''
 
     data_dir = Path(data_dir)

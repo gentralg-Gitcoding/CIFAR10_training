@@ -46,3 +46,38 @@ def plot_sample_images(
     plt.tight_layout()
     
     return fig, axes
+
+
+def plot_learning_curves(
+    history: dict[str, list[float]],
+    figsize: tuple[float, float] = (10, 4)
+) -> tuple[plt.Figure, np.ndarray]:
+    '''Plot training and validation loss and accuracy curves.
+    
+    Args:
+        history: Dictionary containing 'train_loss', 'val_loss', 
+                 'train_accuracy', and 'val_accuracy' lists.
+        figsize: Figure size (width, height).
+        
+    Returns:
+        Tuple of (figure, axes array).
+    '''
+    fig, axes = plt.subplots(1, 2, figsize=figsize)
+
+    axes[0].set_title('Loss')
+    axes[0].plot(history['train_loss'], label='Train')
+    axes[0].plot(history['val_loss'], label='Validation')
+    axes[0].set_xlabel('Epoch')
+    axes[0].set_ylabel('Loss (cross-entropy)')
+    axes[0].legend(loc='best')
+
+    axes[1].set_title('Accuracy')
+    axes[1].plot(history['train_accuracy'], label='Train')
+    axes[1].plot(history['val_accuracy'], label='Validation')
+    axes[1].set_xlabel('Epoch')
+    axes[1].set_ylabel('Accuracy (%)')
+    axes[1].legend(loc='best')
+
+    plt.tight_layout()
+    
+    return fig, axes
