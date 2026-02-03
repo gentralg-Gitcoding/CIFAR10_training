@@ -67,7 +67,7 @@
 
 	// Use 'postCreateCommand' to run commands once after the container is created
 	// Makes empty directories for logs and models, and pre-downloads CIFAR-10 data
-	"postCreateCommand": "mkdir -p logs && mkdir -p models && python src/cifar10_tools/pytorch/data.py",
+	"postCreateCommand": "python src/cifar10_tools/pytorch/data.py",
 
 	// Use 'postAttachCommand' to run TensorBoard
 	"postAttachCommand": ""
