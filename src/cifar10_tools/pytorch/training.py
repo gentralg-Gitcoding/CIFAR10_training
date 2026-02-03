@@ -12,11 +12,28 @@ def train_model(
     criterion: nn.Module,
     optimizer: optim.Optimizer,
     epochs: int = 10,
-    print_every: int = 1
+    print_every: int = 1,
+    device: torch.device | str | None = None
 ) -> dict[str, list[float]]:
     '''Training loop for PyTorch classification model.
     
-    Note: Assumes data is already on the correct device.
+    Handles both pre-loaded GPU data and lazy-loading (CPU data moved per-batch).
+    
+    Args:
+        model: PyTorch model to train.
+        train_loader: DataLoader for training data.
+        val_loader: DataLoader for validation data.
+        criterion: Loss function.
+        optimizer: Optimizer.
+        epochs: Number of training epochs.
+        print_every: Print progress every n epochs.
+        device: Device to move data to per-batch. If None, assumes data is 
+                already on the correct device (GPU pre-loading). If specified,
+                data will be moved to this device per-batch (lazy loading).
+    
+    Returns:
+        Dictionary containing training history with keys:
+        'train_loss', 'val_loss', 'train_accuracy', 'val_accuracy'.
     '''
 
     history = {'train_loss': [], 'val_loss': [], 'train_accuracy': [], 'val_accuracy': []}
@@ -30,6 +47,11 @@ def train_model(
         total = 0
 
         for images, labels in train_loader:
+            
+            # Move to device if lazy loading
+            if device is not None:
+                images = images.to(device, non_blocking=True)
+                labels = labels.to(device, non_blocking=True)
 
             # Forward pass
             optimizer.zero_grad()
@@ -59,6 +81,11 @@ def train_model(
         with torch.no_grad():
 
             for images, labels in val_loader:
+                
+                # Move to device if lazy loading
+                if device is not None:
+                    images = images.to(device, non_blocking=True)
+                    labels = labels.to(device, non_blocking=True)
 
                 outputs = model(images)
                 loss = criterion(outputs, labels)
