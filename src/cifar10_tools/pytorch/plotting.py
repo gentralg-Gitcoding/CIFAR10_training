@@ -10,10 +10,11 @@ def plot_sample_images(
     class_names: list[str],
     nrows: int = 2,
     ncols: int = 5,
-    figsize: tuple[float, float] | None = None,
-    cmap: str = 'gray'
+    figsize: tuple[float, float] | None = None
 ) -> tuple[plt.Figure, np.ndarray]:
     '''Plot sample images from a dataset.
+    
+    Automatically handles both grayscale (1 channel) and RGB (3 channel) images.
     
     Args:
         dataset: PyTorch dataset containing (image, label) tuples.
@@ -21,7 +22,6 @@ def plot_sample_images(
         nrows: Number of rows in the grid.
         ncols: Number of columns in the grid.
         figsize: Figure size (width, height). Defaults to (ncols*1.5, nrows*1.5).
-        cmap: Colormap for displaying images.
         
     Returns:
         Tuple of (figure, axes array).
@@ -36,11 +36,24 @@ def plot_sample_images(
         # Get image and label from dataset
         img, label = dataset[i]
         
-        # Unnormalize and squeeze for plotting
+        # Unnormalize for plotting
         img = img * 0.5 + 0.5
-        img = img.numpy().squeeze()
+        img = img.numpy()
+        
+        # Handle grayscale vs RGB images
+        if img.shape[0] == 1:
+
+            # Grayscale: squeeze channel dimension
+            img = img.squeeze()
+            ax.imshow(img, cmap='gray')
+    
+        else:
+
+            # RGB: transpose from (C, H, W) to (H, W, C)
+            img = np.transpose(img, (1, 2, 0))
+            ax.imshow(img)
+        
         ax.set_title(class_names[label])
-        ax.imshow(img, cmap=cmap)
         ax.axis('off')
 
     plt.tight_layout()
