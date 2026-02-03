@@ -128,3 +128,48 @@ def plot_confusion_matrix(
     plt.tight_layout()
     
     return fig, ax
+
+
+def plot_class_probability_distributions(
+    all_probs: np.ndarray,
+    class_names: list[str],
+    nrows: int = 2,
+    ncols: int = 5,
+    figsize: tuple[float, float] = (12, 4),
+    bins: int = 50,
+    color: str = 'black'
+) -> tuple[plt.Figure, np.ndarray]:
+    '''Plot predicted probability distributions for each class.
+    
+    Args:
+        all_probs: Array of shape (n_samples, n_classes) with predicted probabilities.
+        class_names: List of class names for labeling.
+        nrows: Number of rows in the subplot grid.
+        ncols: Number of columns in the subplot grid.
+        figsize: Figure size (width, height).
+        bins: Number of histogram bins.
+        color: Histogram bar color.
+        
+    Returns:
+        Tuple of (figure, axes array).
+    '''
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
+
+    fig.suptitle('Predicted probability distributions by class', fontsize=14, y=1.02)
+    fig.supxlabel('Predicted probability', fontsize=12)
+    fig.supylabel('Count', fontsize=12)
+
+    axes = axes.flatten()
+
+    for i, (ax, class_name) in enumerate(zip(axes, class_names)):
+        # Get probabilities for this class across all samples
+        class_probs = all_probs[:, i]
+        
+        # Plot histogram
+        ax.hist(class_probs, bins=bins, color=color)
+        ax.set_title(class_name)
+        ax.set_xlim(0, 1)
+
+    plt.tight_layout()
+    
+    return fig, axes
