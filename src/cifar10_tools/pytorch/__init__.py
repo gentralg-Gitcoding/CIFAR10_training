@@ -1,6 +1,6 @@
 '''PyTorch utilities for CIFAR-10 classification.'''
 
-from cifar10_tools.pytorch.data import load_cifar10
+from cifar10_tools.pytorch.data import download_cifar10_data
 from cifar10_tools.pytorch.evaluation import evaluate_model
 from cifar10_tools.pytorch.training import train_model
 from cifar10_tools.pytorch.plotting import (
@@ -18,7 +18,7 @@ from cifar10_tools.pytorch.hyperparameter_optimization import (
 )
 
 __all__ = [
-    'load_cifar10',
+    'download_cifar10_data',
     'evaluate_model',
     'train_model',
     'plot_sample_images',
