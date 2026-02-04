@@ -249,3 +249,59 @@ def plot_evaluation_curves(
     plt.tight_layout()
     
     return fig, (ax1, ax2)
+
+
+def plot_optimization_results(
+    study,
+    figsize: tuple[float, float] = (12, 4)
+) -> tuple[plt.Figure, np.ndarray]:
+    '''Plot Optuna optimization history and hyperparameter importance.
+    
+    Args:
+        study: Optuna study object with completed trials.
+        figsize: Figure size (width, height).
+        
+    Returns:
+        Tuple of (figure, axes array).
+    '''
+    import optuna
+    
+    fig, axes = plt.subplots(1, 2, figsize=figsize)
+
+    # Optimization history
+    axes[0].set_title('Optimization History')
+    
+    trial_numbers = [t.number for t in study.trials if t.value is not None]
+    trial_values = [t.value for t in study.trials if t.value is not None]
+
+    axes[0].plot(trial_numbers, trial_values, 'ko-', alpha=0.6)
+    axes[0].axhline(
+        y=study.best_value,
+        color='r', linestyle='--', label=f'Best: {study.best_value:.2f}%'
+    )
+    axes[0].set_xlabel('Trial')
+    axes[0].set_ylabel('Validation Accuracy (%)')
+    axes[0].legend()
+
+    # Hyperparameter importance (if enough trials completed)
+    axes[1].set_title('Hyperparameter Importance')
+    completed_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+
+    if len(completed_trials) >= 5:
+        importance = optuna.importance.get_param_importances(study)
+        params = list(importance.keys())
+        values = list(importance.values())
+        
+        axes[1].set_xlabel('Importance')
+        axes[1].barh(params, values, color='black')
+
+    else:
+        axes[1].text(
+            0.5, 0.5,
+            'Not enough completed trials\nfor importance analysis', 
+            ha='center', va='center', transform=axes[1].transAxes
+        )
+
+    plt.tight_layout()
+    
+    return fig, axes

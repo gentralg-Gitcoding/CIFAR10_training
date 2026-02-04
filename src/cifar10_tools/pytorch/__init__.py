@@ -8,7 +8,8 @@ from cifar10_tools.pytorch.plotting import (
     plot_learning_curves,
     plot_confusion_matrix,
     plot_class_probability_distributions,
-    plot_evaluation_curves
+    plot_evaluation_curves,
+    plot_optimization_results
 )
 from cifar10_tools.pytorch.hyperparameter_optimization import (
     create_cnn,
@@ -25,6 +26,7 @@ __all__ = [
     'plot_confusion_matrix',
     'plot_class_probability_distributions',
     'plot_evaluation_curves',
+    'plot_optimization_results',
     'create_cnn',
     'train_trial',
     'create_objective'
