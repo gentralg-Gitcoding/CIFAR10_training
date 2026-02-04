@@ -115,6 +115,4 @@ def train_model(
                 f'val_accuracy: {val_accuracy:.2f}%'
             )
 
-    print('\nTraining complete.')
-
     return history
