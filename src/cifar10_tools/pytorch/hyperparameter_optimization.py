@@ -54,7 +54,7 @@ def create_cnn(
     for block_idx in range(n_conv_blocks):
         out_channels = initial_filters * (2 ** block_idx)
         kernel_size = max(3, base_kernel_size - 2 * block_idx)
-        padding = kernel_size // 2
+        padding = (kernel_size - 1) // 2  # Maintain spatial dimensions
         
         # First conv in block
         layers.append(nn.Conv2d(current_channels, out_channels, kernel_size=kernel_size, padding=padding))
@@ -270,6 +270,10 @@ def create_objective(
                 trial=trial
             )
 
+        except RuntimeError as e:
+            # Catch architecture errors (e.g., dimension mismatches)
+            raise optuna.TrialPruned(f'RuntimeError with params: {trial.params} - {str(e)}')
+        
         except torch.cuda.OutOfMemoryError:
             # Clear CUDA cache and skip this trial
             torch.cuda.empty_cache()
