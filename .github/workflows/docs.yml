@@ -70,8 +70,9 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     
-    # Only deploy on pushes to main branch (not on PRs or other branches)
-    if: github.ref == 'refs/heads/main'
+    # Deploy on release publications or manual workflow runs
+    # (Skip on pull requests or other branch pushes)
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     
     # Use the 'github-pages' environment
     environment:
