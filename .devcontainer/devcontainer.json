@@ -55,7 +55,7 @@
 		  "ms-toolsai.jupyter",                     // Jupyter notebook support for interactive data science
 		  "streetsidesoftware.code-spell-checker",  // Spell checking for code and documentation
 		  "ms-toolsai.tensorboard",                 // TensorBoard extension
-		  "optuna.optuna-dashboard"                 // Optuna dashbooard extension
+		  "optuna.optuna-dashboard"                 // Optuna dashboard extension
 		]
 	  }
 	},
@@ -66,7 +66,8 @@
 
 	// Use 'postCreateCommand' to run commands once after the container is created
 	// Makes empty directories for logs and models, and pre-downloads CIFAR-10 data
-	"postCreateCommand": "mkdir -p models/pytorch && python src/cifar10_tools/pytorch/data.py",
+	// Installs cifar10_tools in editable mode for easy development and testing of data loading code
+	"postCreateCommand": "mkdir -p models/pytorch && python src/cifar10_tools/pytorch/data.py && pip install -e .",
 
 	// Use 'postAttachCommand' to run TensorBoard
 	"postAttachCommand": ""
