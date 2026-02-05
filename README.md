@@ -1,5 +1,9 @@
 # PyTorch: CIFAR-10 Demonstration
 
+[![Publish to PyPI](https://github.com/gperdrizet/CIFAR10/actions/workflows/publish-to-pypi.yml/badge.svg)](https://github.com/gperdrizet/CIFAR10/actions/workflows/publish-to-pypi.yml)
+
+[![Deploy Documentation](https://github.com/gperdrizet/CIFAR10/actions/workflows/docs.yml/badge.svg)](https://github.com/gperdrizet/CIFAR10/actions/workflows/docs.yml)
+
 A progressive deep learning tutorial for image classification on the CIFAR-10 dataset using PyTorch. This project demonstrates the evolution from basic deep neural networks to optimized convolutional neural networks with data augmentation. It also provides a set of utility functions as a PyPI package for use in other projects.
 
 [View on PyPI](https://pypi.org/project/cifar10_tools) | [Documentation](https://gperdrizet.github.io/CIFAR10/)
