@@ -46,6 +46,7 @@ def create_cnn(
     Returns:
         nn.Sequential model
     '''
+
     layers = []
     current_channels = in_channels
     current_size = input_size
@@ -54,10 +55,12 @@ def create_cnn(
     for block_idx in range(n_conv_blocks):
         out_channels = initial_filters * (2 ** block_idx)
         kernel_size = max(3, base_kernel_size - 2 * block_idx)
-        padding = (kernel_size - 1) // 2  # Maintain spatial dimensions
+        padding = kernel_size // 2
         
         # First conv in block
         layers.append(nn.Conv2d(current_channels, out_channels, kernel_size=kernel_size, padding=padding))
+        # Update size after conv: output_size = (input_size + 2*padding - kernel_size) + 1
+        current_size = (current_size + 2 * padding - kernel_size) + 1
 
         if use_batch_norm:
             layers.append(nn.BatchNorm2d(out_channels))
@@ -66,6 +69,7 @@ def create_cnn(
         
         # Second conv in block
         layers.append(nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size, padding=padding))
+        current_size = (current_size + 2 * padding - kernel_size) + 1
 
         if use_batch_norm:
             layers.append(nn.BatchNorm2d(out_channels))
@@ -81,11 +85,10 @@ def create_cnn(
         layers.append(nn.Dropout(conv_dropout_rate))
         
         current_channels = out_channels
-        current_size //= 2
+        current_size //= 2  # Pooling halves the size
     
-    # Calculate flattened size
-    final_channels = initial_filters * (2 ** (n_conv_blocks - 1))
-    flattened_size = final_channels * current_size * current_size
+    # Calculate flattened size using actual current_size
+    flattened_size = current_channels * current_size * current_size
     
     # Classifier - dynamic FC layers with halving pattern
     layers.append(nn.Flatten())
@@ -180,7 +183,8 @@ def create_objective(
     n_epochs: int,
     device: torch.device,
     num_classes: int = 10,
-    in_channels: int = 3
+    in_channels: int = 3,
+    search_space: dict = None
 ) -> Callable[[optuna.Trial], float]:
     '''Create an Optuna objective function for CNN hyperparameter optimization.
     
@@ -195,6 +199,7 @@ def create_objective(
         device: Device to train on (cuda or cpu)
         num_classes: Number of output classes (default: 10)
         in_channels: Number of input channels (default: 3 for RGB)
+        search_space: Dictionary defining hyperparameter search space (default: None)
     
     Returns:
         Objective function for optuna.Study.optimize()
@@ -205,21 +210,43 @@ def create_objective(
         >>> study.optimize(objective, n_trials=100)
     '''
     
+    # Default search space if none provided
+    if search_space is None:
+        search_space = {
+            'batch_size': [64, 128, 256, 512, 1024],
+            'n_conv_blocks': (1, 5),
+            'initial_filters': [8, 16, 32, 64, 128],
+            'n_fc_layers': (1, 8),
+            'base_kernel_size': (3, 7),
+            'conv_dropout_rate': (0.0, 0.5),
+            'fc_dropout_rate': (0.2, 0.75),
+            'pooling_strategy': ['max', 'avg'],
+            'use_batch_norm': [True, False],
+            'learning_rate': (1e-5, 1e-1, 'log'),
+            'optimizer': ['Adam', 'SGD', 'RMSprop'],
+            'sgd_momentum': (0.8, 0.99)
+        }
+    
     def objective(trial: optuna.Trial) -> float:
         '''Optuna objective function for CNN hyperparameter optimization.'''
         
-        # Suggest hyperparameters
-        batch_size = trial.suggest_categorical('batch_size', [64, 128, 256, 512, 1024])
-        n_conv_blocks = trial.suggest_int('n_conv_blocks', 1, 5)
-        initial_filters = trial.suggest_categorical('initial_filters', [8, 16, 32, 64, 128])
-        n_fc_layers = trial.suggest_int('n_fc_layers', 1, 8)
-        base_kernel_size = trial.suggest_int('base_kernel_size', 3, 7)
-        conv_dropout_rate = trial.suggest_float('conv_dropout_rate', 0.0, 0.5)
-        fc_dropout_rate = trial.suggest_float('fc_dropout_rate', 0.2, 0.75)
-        pooling_strategy = trial.suggest_categorical('pooling_strategy', ['max', 'avg'])
-        use_batch_norm = trial.suggest_categorical('use_batch_norm', [True, False])
-        learning_rate = trial.suggest_float('learning_rate', 1e-5, 1e-1, log=True)
-        optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'SGD', 'RMSprop'])
+        # Suggest hyperparameters from search space
+        batch_size = trial.suggest_categorical('batch_size', search_space['batch_size'])
+        n_conv_blocks = trial.suggest_int('n_conv_blocks', *search_space['n_conv_blocks'])
+        initial_filters = trial.suggest_categorical('initial_filters', search_space['initial_filters'])
+        n_fc_layers = trial.suggest_int('n_fc_layers', *search_space['n_fc_layers'])
+        base_kernel_size = trial.suggest_int('base_kernel_size', *search_space['base_kernel_size'])
+        conv_dropout_rate = trial.suggest_float('conv_dropout_rate', *search_space['conv_dropout_rate'])
+        fc_dropout_rate = trial.suggest_float('fc_dropout_rate', *search_space['fc_dropout_rate'])
+        pooling_strategy = trial.suggest_categorical('pooling_strategy', search_space['pooling_strategy'])
+        use_batch_norm = trial.suggest_categorical('use_batch_norm', search_space['use_batch_norm'])
+        
+        # Handle learning rate with optional log scale
+        lr_params = search_space['learning_rate']
+        learning_rate = trial.suggest_float('learning_rate', lr_params[0], lr_params[1], 
+                                           log=(lr_params[2] == 'log' if len(lr_params) > 2 else False))
+        
+        optimizer_name = trial.suggest_categorical('optimizer', search_space['optimizer'])
         
         # Create data loaders with suggested batch size
         train_loader, val_loader, _ = make_data_loaders(
@@ -250,7 +277,7 @@ def create_objective(
             optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
         elif optimizer_name == 'SGD':
-            momentum = trial.suggest_float('sgd_momentum', 0.8, 0.99)
+            momentum = trial.suggest_float('sgd_momentum', *search_space['sgd_momentum'])
             optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=momentum)
         
         else:  # RMSprop
