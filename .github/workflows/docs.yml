@@ -74,11 +74,6 @@ jobs:
     # (Skip on pull requests or other branch pushes)
     if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     
-    # Use the 'github-pages' environment
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    
     runs-on: ubuntu-latest
     
     # Wait for build job to complete before deploying
