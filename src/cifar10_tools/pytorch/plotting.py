@@ -222,7 +222,7 @@ def plot_evaluation_curves(
         roc_auc = auc(fpr, tpr)
         ax1.plot(fpr, tpr, label=class_name)
 
-    ax1.plot([0, 1], [0, 1], 'k--', label='Random classifier')
+    ax1.plot([0, 1], [0, 1], 'k--', label='random classifier')
     ax1.set_xlabel('False positive rate')
     ax1.set_ylabel('True positive rate')
     ax1.legend(loc='lower right', fontsize=12)
