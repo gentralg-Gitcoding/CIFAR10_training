@@ -1,4 +1,29 @@
-__pycache__
-data/pytorch/cifar10
-logs
-models
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Project data
+data/pytorch/cifar10/
+
+# Outputs
+logs/
+models/
+
+# Sphinx documentation
+docs/build/
+docs/source/_autosummary/
+.doctrees/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

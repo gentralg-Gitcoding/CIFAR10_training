@@ -33,6 +33,17 @@ torch = ">=2.0"
 torchvision = ">=0.15"
 numpy = ">=1.24"
 
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+sphinx = ">=7.0"
+sphinx-rtd-theme = ">=2.0"
+nbsphinx = ">=0.9"
+sphinx-autodoc-typehints = ">=1.25"
+ipykernel = ">=6.0"
+pandoc = ">=2.0"
+
 [tool.poetry.extras]
 tensorflow = ["tensorflow"]
 

@@ -2,17 +2,23 @@
 
 A progressive deep learning tutorial for image classification on the CIFAR-10 dataset using PyTorch. This project demonstrates the evolution from basic deep neural networks to optimized convolutional neural networks with data augmentation. It also provides a set of utility functions as a PyPI package for use in other projects.
 
-[View on PyPI](https://pypi.org/project/cifar10_tools)
+[View on PyPI](https://pypi.org/project/cifar10_tools) | [Documentation](https://gperdrizet.github.io/CIFAR10/)
 
 ## Installation
 
-Install the helper tools package locally in editable mode:
+Install the helper tools package locally in editable mode to use in this repository:
 
 ```bash
 pip install -e .
 ```
 
-## Project Overview
+Or install from PyPI to use in other projects:
+
+```bash
+pip install cifar10_tools
+```
+
+## Project overview
 
 This repository contains a series of Jupyter notebooks that progressively build more sophisticated neural network architectures for the CIFAR-10 image classification task. Each notebook builds upon concepts from the previous one, demonstrating key deep learning techniques.
 
