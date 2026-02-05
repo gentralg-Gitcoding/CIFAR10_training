@@ -48,7 +48,7 @@ To manually trigger deployment:
    - Check the "Deploy Documentation" workflow
 
 3. Access your docs at:
-   https://gperdrizet.github.io/CIFAR10/
+   https://gperdrizet.github.io/CIFAR10
 
 ## Build warnings
 
