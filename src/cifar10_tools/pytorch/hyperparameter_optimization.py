@@ -12,13 +12,17 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
+from cifar10_tools.pytorch.data import make_data_loaders
+
 
 def create_cnn(
     n_conv_blocks: int,
     initial_filters: int,
-    fc_units_1: int,
-    fc_units_2: int,
-    dropout_rate: float,
+    n_fc_layers: int,
+    base_kernel_size: int,
+    conv_dropout_rate: float,
+    fc_dropout_rate: float,
+    pooling_strategy: str,
     use_batch_norm: bool,
     num_classes: int = 10,
     in_channels: int = 3,
@@ -29,9 +33,11 @@ def create_cnn(
     Args:
         n_conv_blocks: Number of convolutional blocks (1-5)
         initial_filters: Number of filters in first conv layer (doubles each block)
-        fc_units_1: Number of units in first fully connected layer
-        fc_units_2: Number of units in second fully connected layer
-        dropout_rate: Dropout probability
+        n_fc_layers: Number of fully connected layers (1-8)
+        base_kernel_size: Base kernel size (decreases by 2 per block, min 3)
+        conv_dropout_rate: Dropout probability after convolutional blocks
+        fc_dropout_rate: Dropout probability in fully connected layers
+        pooling_strategy: Pooling type ('max' or 'avg')
         use_batch_norm: Whether to use batch normalization
         num_classes: Number of output classes (default: 10 for CIFAR-10)
         in_channels: Number of input channels (default: 3 for RGB)
@@ -44,11 +50,14 @@ def create_cnn(
     current_channels = in_channels
     current_size = input_size
     
+    # Convolutional blocks
     for block_idx in range(n_conv_blocks):
         out_channels = initial_filters * (2 ** block_idx)
+        kernel_size = max(3, base_kernel_size - 2 * block_idx)
+        padding = kernel_size // 2
         
         # First conv in block
-        layers.append(nn.Conv2d(current_channels, out_channels, kernel_size=3, padding=1))
+        layers.append(nn.Conv2d(current_channels, out_channels, kernel_size=kernel_size, padding=padding))
 
         if use_batch_norm:
             layers.append(nn.BatchNorm2d(out_channels))
@@ -56,16 +65,20 @@ def create_cnn(
         layers.append(nn.ReLU())
         
         # Second conv in block
-        layers.append(nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1))
+        layers.append(nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size, padding=padding))
 
         if use_batch_norm:
             layers.append(nn.BatchNorm2d(out_channels))
 
         layers.append(nn.ReLU())
         
-        # Pooling and dropout
-        layers.append(nn.MaxPool2d(2, 2))
-        layers.append(nn.Dropout(dropout_rate))
+        # Pooling
+        if pooling_strategy == 'max':
+            layers.append(nn.MaxPool2d(2, 2))
+        else:  # avg
+            layers.append(nn.AvgPool2d(2, 2))
+        
+        layers.append(nn.Dropout(conv_dropout_rate))
         
         current_channels = out_channels
         current_size //= 2
@@ -74,15 +87,26 @@ def create_cnn(
     final_channels = initial_filters * (2 ** (n_conv_blocks - 1))
     flattened_size = final_channels * current_size * current_size
     
-    # Classifier (3 fully connected layers)
+    # Classifier - dynamic FC layers with halving pattern
     layers.append(nn.Flatten())
-    layers.append(nn.Linear(flattened_size, fc_units_1))
-    layers.append(nn.ReLU())
-    layers.append(nn.Dropout(dropout_rate))
-    layers.append(nn.Linear(fc_units_1, fc_units_2))
-    layers.append(nn.ReLU())
-    layers.append(nn.Dropout(dropout_rate))
-    layers.append(nn.Linear(fc_units_2, num_classes))
+    
+    # Generate FC layer sizes by halving from flattened_size
+    fc_sizes = []
+    current_fc_size = flattened_size // 2
+    for _ in range(n_fc_layers):
+        fc_sizes.append(max(10, current_fc_size))  # Minimum 10 units
+        current_fc_size //= 2
+    
+    # Add FC layers
+    in_features = flattened_size
+    for fc_size in fc_sizes:
+        layers.append(nn.Linear(in_features, fc_size))
+        layers.append(nn.ReLU())
+        layers.append(nn.Dropout(fc_dropout_rate))
+        in_features = fc_size
+    
+    # Output layer
+    layers.append(nn.Linear(in_features, num_classes))
     
     return nn.Sequential(*layers)
 
@@ -113,6 +137,7 @@ def train_trial(
     best_val_accuracy = 0.0
     
     for epoch in range(n_epochs):
+
         # Training phase
         model.train()
 
@@ -149,8 +174,9 @@ def train_trial(
 
 
 def create_objective(
-    train_loader: DataLoader,
-    val_loader: DataLoader,
+    data_dir,
+    train_transform,
+    eval_transform,
     n_epochs: int,
     device: torch.device,
     num_classes: int = 10,
@@ -158,12 +184,13 @@ def create_objective(
 ) -> Callable[[optuna.Trial], float]:
     '''Create an Optuna objective function for CNN hyperparameter optimization.
     
-    This factory function creates a closure that captures the data loaders and
-    training configuration, returning an objective function suitable for Optuna.
+    This factory function creates a closure that captures the data loading parameters
+    and training configuration, returning an objective function suitable for Optuna.
     
     Args:
-        train_loader: DataLoader for training data
-        val_loader: DataLoader for validation data
+        data_dir: Directory containing CIFAR-10 data
+        train_transform: Transform to apply to training data
+        eval_transform: Transform to apply to validation data
         n_epochs: Number of epochs per trial
         device: Device to train on (cuda or cpu)
         num_classes: Number of output classes (default: 10)
@@ -173,7 +200,7 @@ def create_objective(
         Objective function for optuna.Study.optimize()
     
     Example:
-        >>> objective = create_objective(train_loader, val_loader, n_epochs=50, device=device)
+        >>> objective = create_objective(data_dir, transform, transform, n_epochs=50, device=device)
         >>> study = optuna.create_study(direction='maximize')
         >>> study.optimize(objective, n_trials=100)
     '''
@@ -182,22 +209,37 @@ def create_objective(
         '''Optuna objective function for CNN hyperparameter optimization.'''
         
         # Suggest hyperparameters
+        batch_size = trial.suggest_categorical('batch_size', [64, 128, 256, 512, 1024])
         n_conv_blocks = trial.suggest_int('n_conv_blocks', 1, 5)
         initial_filters = trial.suggest_categorical('initial_filters', [8, 16, 32, 64, 128])
-        fc_units_1 = trial.suggest_categorical('fc_units_1', [128, 256, 512, 1024, 2048])
-        fc_units_2 = trial.suggest_categorical('fc_units_2', [32, 64, 128, 256, 512])
-        dropout_rate = trial.suggest_float('dropout_rate', 0.2, 0.75)
+        n_fc_layers = trial.suggest_int('n_fc_layers', 1, 8)
+        base_kernel_size = trial.suggest_int('base_kernel_size', 3, 7)
+        conv_dropout_rate = trial.suggest_float('conv_dropout_rate', 0.0, 0.5)
+        fc_dropout_rate = trial.suggest_float('fc_dropout_rate', 0.2, 0.75)
+        pooling_strategy = trial.suggest_categorical('pooling_strategy', ['max', 'avg'])
         use_batch_norm = trial.suggest_categorical('use_batch_norm', [True, False])
         learning_rate = trial.suggest_float('learning_rate', 1e-5, 1e-1, log=True)
         optimizer_name = trial.suggest_categorical('optimizer', ['Adam', 'SGD', 'RMSprop'])
+        
+        # Create data loaders with suggested batch size
+        train_loader, val_loader, _ = make_data_loaders(
+            data_dir=data_dir,
+            batch_size=batch_size,
+            train_transform=train_transform,
+            eval_transform=eval_transform,
+            device=device,
+            download=False
+        )
         
         # Create model
         model = create_cnn(
             n_conv_blocks=n_conv_blocks,
             initial_filters=initial_filters,
-            fc_units_1=fc_units_1,
-            fc_units_2=fc_units_2,
-            dropout_rate=dropout_rate,
+            n_fc_layers=n_fc_layers,
+            base_kernel_size=base_kernel_size,
+            conv_dropout_rate=conv_dropout_rate,
+            fc_dropout_rate=fc_dropout_rate,
+            pooling_strategy=pooling_strategy,
             use_batch_norm=use_batch_norm,
             num_classes=num_classes,
             in_channels=in_channels
