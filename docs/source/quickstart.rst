@@ -82,6 +82,8 @@ This example shows the complete workflow using the MNIST dataset.
        val_loader=val_loader,
        criterion=criterion,
        optimizer=optimizer,
+       device=device,
+       lazy_loading=False,  # Data already on device from make_data_loaders
        epochs=20,
        print_every=5
    )
@@ -220,8 +222,11 @@ Use Optuna to find optimal hyperparameters:
        'n_conv_blocks': (1, 4),
        'initial_filters': [16, 32, 64],
        'n_fc_layers': (1, 3),
+       'conv_dropout_rate': (0.1, 0.5),
+       'fc_dropout_rate': (0.3, 0.7),
        'learning_rate': (1e-5, 1e-2, 'log'),
-       'optimizer': ['Adam', 'SGD']
+       'optimizer': ['Adam', 'SGD'],
+       'weight_decay': (1e-6, 1e-3, 'log')
    }
 
    # Create objective function
@@ -230,8 +235,9 @@ Use Optuna to find optimal hyperparameters:
        train_transform=transform,
        eval_transform=transform,
        n_epochs=20,
+       device=device,
        num_classes=10,
-       input_size=(1, 28, 28),  # (channels, height, width)
+       in_channels=1,
        search_space=search_space
    )
 
@@ -255,13 +261,10 @@ For more control, use the CNN builder:
        n_conv_blocks=3,
        initial_filters=32,
        n_fc_layers=2,
-       num_classes=10,
-       input_size=(3, 32, 32),
-       base_kernel_size=3,
        conv_dropout_rate=0.25,
        fc_dropout_rate=0.5,
-       pooling_strategy='max',
-       use_batch_norm=True
+       num_classes=10,
+       in_channels=3
    ).to(device)
 
 Next steps

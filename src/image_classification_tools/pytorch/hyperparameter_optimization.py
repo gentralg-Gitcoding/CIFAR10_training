@@ -11,8 +11,11 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+from torchvision import datasets
 
-from image_classification_tools.pytorch.data import make_data_loaders
+from image_classification_tools.pytorch.data import (
+    load_datasets, prepare_splits, create_dataloaders
+)
 
 
 def create_cnn(
@@ -234,13 +237,28 @@ def create_objective(
                                           log=(wd_params[2] == 'log' if len(wd_params) > 2 else False))
         
         # Create data loaders with suggested batch size
-        train_loader, val_loader, _ = make_data_loaders(
-            data_dir=data_dir,
-            batch_size=batch_size,
+        # Load datasets
+        train_dataset, test_dataset = load_datasets(
+            data_source=datasets.CIFAR10,
             train_transform=train_transform,
             eval_transform=eval_transform,
-            device=device,
-            download=False
+            download=False,
+            root=data_dir
+        )
+        
+        # Prepare splits
+        train_dataset, val_dataset, _ = prepare_splits(
+            train_dataset=train_dataset,
+            test_dataset=test_dataset,
+            train_val_split=0.8
+        )
+        
+        # Create dataloaders with memory preloading
+        train_loader, val_loader, _ = create_dataloaders(
+            train_dataset, val_dataset, val_dataset,
+            batch_size=batch_size,
+            preload_to_memory=(device is not None),
+            device=device
         )
         
         # Create model with suggested architecture
