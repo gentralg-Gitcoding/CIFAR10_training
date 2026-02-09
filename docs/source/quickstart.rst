@@ -27,7 +27,7 @@ This example shows the complete workflow using the MNIST dataset.
    import torch
    from torchvision import datasets, transforms
    from image_classification_tools.pytorch.data import (
-       load_datasets, prepare_splits, create_dataloaders
+       load_dataset, prepare_splits, create_dataloaders
    )
 
    # Define preprocessing
@@ -37,10 +37,18 @@ This example shows the complete workflow using the MNIST dataset.
    ])
 
    # Step 1: Load datasets
-   train_dataset, test_dataset = load_datasets(
+   train_dataset = load_dataset(
        data_source=datasets.MNIST,
-       train_transform=transform,
-       eval_transform=transform,
+       transform=transform,
+       train=True,
+       download=True,
+       root=Path('./data/mnist')
+   )
+   
+   test_dataset = load_dataset(
+       data_source=datasets.MNIST,
+       transform=transform,
+       train=False,
        download=True,
        root=Path('./data/mnist')
    )
@@ -49,7 +57,7 @@ This example shows the complete workflow using the MNIST dataset.
    train_dataset, val_dataset, test_dataset = prepare_splits(
        train_dataset=train_dataset,
        test_dataset=test_dataset,
-       train_val_split=0.8
+       val_size=10000
    )
 
    # Step 3: Create dataloaders

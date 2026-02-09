@@ -9,7 +9,7 @@ Data loading
 Functions
 ---------
 
-.. autofunction:: image_classification_tools.pytorch.data.load_datasets
+.. autofunction:: image_classification_tools.pytorch.data.load_dataset
 
 .. autofunction:: image_classification_tools.pytorch.data.prepare_splits
 
@@ -22,15 +22,15 @@ Overview
 
 The data module provides a flexible three-step data loading workflow:
 
-1. **Load datasets**: Load train/test datasets from PyTorch dataset classes or directories
-2. **Prepare splits**: Split data into train/val(/test) with configurable ratios
+1. **Load datasets**: Load individual train or test datasets from PyTorch dataset classes or directories
+2. **Prepare splits**: Split data into train/val(/test) with configurable sizes
 3. **Create dataloaders**: Create DataLoaders with optional memory preloading strategies
 
 Key features:
 
 * Support for torchvision datasets (CIFAR-10, MNIST, etc.) and custom ImageFolder datasets
-* Separate train and evaluation transforms
-* Flexible splitting: 2-way (train/val) or 3-way (train/val/test)
+* Single transform applied to both training and test data
+* Flexible splitting: 2-way (train/val) or 3-way (train/val/test) with integer sizes
 * Three memory strategies: lazy loading, CPU preloading, or GPU preloading
 * Data augmentation with chunking for large datasets
 * Configurable batch sizes and workers
@@ -46,7 +46,7 @@ Basic workflow (CIFAR-10 with GPU preloading):
    import torch
    from torchvision import datasets, transforms
    from image_classification_tools.pytorch.data import (
-       load_datasets, prepare_splits, create_dataloaders
+       load_dataset, prepare_splits, create_dataloaders
    )
 
    # Define transforms
@@ -56,10 +56,18 @@ Basic workflow (CIFAR-10 with GPU preloading):
    ])
 
    # Step 1: Load datasets
-   train_dataset, test_dataset = load_datasets(
+   train_dataset = load_dataset(
        data_source=datasets.CIFAR10,
-       train_transform=transform,
-       eval_transform=transform,
+       transform=transform,
+       train=True,
+       download=True,
+       root=Path('./data/cifar10')
+   )
+   
+   test_dataset = load_dataset(
+       data_source=datasets.CIFAR10,
+       transform=transform,
+       train=False,
        download=True,
        root=Path('./data/cifar10')
    )
@@ -68,7 +76,7 @@ Basic workflow (CIFAR-10 with GPU preloading):
    train_dataset, val_dataset, test_dataset = prepare_splits(
        train_dataset=train_dataset,
        test_dataset=test_dataset,
-       train_val_split=0.8  # 80% train, 20% val
+       val_size=10000  # 10,000 images for validation
    )
 
    # Step 3: Create dataloaders with GPU preloading
@@ -84,7 +92,7 @@ With data augmentation (lazy loading):
 
 .. code-block:: python
 
-   # Define separate transforms for training and evaluation
+   # Define transform with augmentation for training
    train_transform = transforms.Compose([
        transforms.RandomHorizontalFlip(),
        transforms.RandomRotation(15),
@@ -92,16 +100,25 @@ With data augmentation (lazy loading):
        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
    ])
 
+   # Define transform without augmentation for evaluation
    eval_transform = transforms.Compose([
        transforms.ToTensor(),
        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
    ])
 
-   # Load with different transforms
-   train_dataset, test_dataset = load_datasets(
+   # Load training data with augmentation
+   train_dataset = load_dataset(
        data_source=datasets.CIFAR10,
-       train_transform=train_transform,
-       eval_transform=eval_transform,
+       transform=train_transform,
+       train=True,
+       root=Path('./data/cifar10')
+   )
+   
+   # Load test data without augmentation
+   test_dataset = load_dataset(
+       data_source=datasets.CIFAR10,
+       transform=eval_transform,
+       train=False,
        root=Path('./data/cifar10')
    )
 
@@ -109,7 +126,7 @@ With data augmentation (lazy loading):
    train_dataset, val_dataset, test_dataset = prepare_splits(
        train_dataset=train_dataset,
        test_dataset=test_dataset,
-       train_val_split=0.8
+       val_size=10000
    )
 
    # Create dataloaders with lazy loading (no preloading)
@@ -125,20 +142,25 @@ With data augmentation (lazy loading):
 
 .. code-block:: python
 
+   # Define transform
+   transform = transforms.Compose([
+       transforms.ToTensor(),
+       transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+   ])
+
    # Load only training data (no test set available)
-   train_dataset, _ = load_datasets(
-       data_source=datasets.ImageFolder,
-       train_transform=transform,
-       eval_transform=transform,
-       root=Path('./my_dataset/train')
+   train_dataset = load_dataset(
+       data_source=Path('./my_dataset'),
+       transform=transform,
+       train=True
    )
 
    # 3-way split: train/val/test all from train_dataset
    train_dataset, val_dataset, test_dataset = prepare_splits(
        train_dataset=train_dataset,
        test_dataset=None,  # Will split test from train_dataset
-       train_val_split=0.8,  # 80/20 split of remaining data
-       test_split=0.15  # Reserve 15% for testing
+       val_size=5000,  # 5,000 images for validation
+       test_size=5000  # 5,000 images for testing
    )
-   # Results in approximately: 68% train, 17% val, 15% test
+   # Remaining images will be used for training
 

@@ -71,19 +71,22 @@ Basic hyperparameter optimization for MNIST:
        'n_conv_blocks': (1, 3),
        'initial_filters': [16, 32],
        'n_fc_layers': (1, 3),
+       'conv_dropout_rate': (0.1, 0.5),
+       'fc_dropout_rate': (0.3, 0.7),
        'learning_rate': (1e-4, 1e-2, 'log'),
-       'optimizer': ['Adam', 'SGD']
+       'optimizer': ['Adam', 'SGD'],
+       'sgd_momentum': (0.8, 0.99),
+       'weight_decay': (1e-6, 1e-3, 'log')
    }
 
    # Create objective
    objective = create_objective(
        data_dir='./data',
-       train_transform=transform,
-       eval_transform=transform,
+       transform=transform,
        n_epochs=20,
+       device=torch.device('cuda'),
        num_classes=10,
-       input_size=(1, 28, 28),
-       device='cuda',
+       in_channels=1,
        search_space=search_space
    )
 
@@ -127,11 +130,10 @@ Creating the final model:
        n_conv_blocks=best_params['n_conv_blocks'],
        initial_filters=best_params['initial_filters'],
        n_fc_layers=best_params['n_fc_layers'],
-       base_kernel_size=best_params['base_kernel_size'],
        conv_dropout_rate=best_params['conv_dropout_rate'],
        fc_dropout_rate=best_params['fc_dropout_rate'],
-       pooling_strategy=best_params['pooling_strategy'],
-       use_batch_norm=best_params['use_batch_norm']
+       num_classes=10,
+       in_channels=3
    ).to(device)
 
 Search space format
@@ -145,15 +147,13 @@ The search space dictionary supports three formats:
 
 Default search space includes:
 
-* Batch size: [64, 128, 256, 512, 1024]
+* Batch size: [64, 128, 256, 512]
 * Conv blocks: 1-5
-* Initial filters: [8, 16, 32, 64, 128]
-* FC layers: 1-8
-* Kernel size: 3-7
-* Conv dropout: 0.0-0.5
-* FC dropout: 0.2-0.75
-* Pooling: ['max', 'avg']
-* Batch norm: [True, False]
-* Learning rate: 1e-5 to 1e-1 (log scale)
+* Initial filters: [16, 32, 64, 128]
+* FC layers: 1-4
+* Conv dropout: 0.1-0.5
+* FC dropout: 0.3-0.7
+* Learning rate: 1e-5 to 1e-2 (log scale)
 * Optimizer: ['Adam', 'SGD', 'RMSprop']
 * SGD momentum: 0.8-0.99
+* Weight decay: 1e-6 to 1e-3 (log scale)

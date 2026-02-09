@@ -21,7 +21,7 @@ The training module provides utilities for model training with:
 * Configurable print frequency
 * Device specification with lazy loading or pre-loaded data support
 * Optional validation (can train without validation data)
-* Early stopping with model checkpoint restoration
+* Optional early stopping with model checkpoint restoration (disabled by default)
 * Learning rate scheduler support (cyclic and epoch-based like ReduceLROnPlateau)
 * Training history returned as a dictionary
 
@@ -48,6 +48,21 @@ Basic training:
        optimizer=optimizer,
        device=device,
        lazy_loading=False,  # Data already on device
+       epochs=50,
+       print_every=5
+   )
+   
+   # Or enable early stopping
+   history = train_model(
+       model=model,
+       train_loader=train_loader,
+       val_loader=val_loader,
+       criterion=criterion,
+       optimizer=optimizer,
+       device=device,
+       lazy_loading=False,
+       enable_early_stopping=True,
+       early_stopping_patience=10,
        epochs=50,
        print_every=5
    )
@@ -83,6 +98,7 @@ With learning rate schedulers and early stopping:
        device=device,
        lazy_loading=False,
        cyclic_scheduler=cyclic_scheduler,  # Or use epoch_scheduler
+       enable_early_stopping=True,  # Enable early stopping (disabled by default)
        early_stopping_patience=10,
        epochs=100,
        print_every=10
