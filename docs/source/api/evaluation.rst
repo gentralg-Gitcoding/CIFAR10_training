@@ -39,8 +39,8 @@ Per-class accuracy:
 
 .. code-block:: python
 
-   class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer',
-                  'dog', 'frog', 'horse', 'ship', 'truck']
+   # Define your class names
+   class_names = ['class1', 'class2', 'class3', ...]
 
    # Calculate per-class accuracy
    class_correct = {name: 0 for name in class_names}

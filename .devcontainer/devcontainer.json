@@ -66,9 +66,9 @@
 
 	// Use 'postCreateCommand' to run commands once after the container is created
 	// Makes empty directories for logs and models, and pre-downloads CIFAR-10 data
-	// Installs cifar10_tools in editable mode for easy development and testing of data loading code
-	"postCreateCommand": "mkdir -p models/pytorch && python src/cifar10_tools/pytorch/data.py && pip install -e .",
+	"postCreateCommand": "mkdir -p models/pytorch && python src/image_classification_tools/pytorch/data.py",
 
-	// Use 'postAttachCommand' to run TensorBoard
-	"postAttachCommand": ""
+	// Use 'postAttachCommand' to install package in editable mode on each attach
+	// This ensures the package is always up to date with local changes
+	"postAttachCommand": "pip install -e ."
 }

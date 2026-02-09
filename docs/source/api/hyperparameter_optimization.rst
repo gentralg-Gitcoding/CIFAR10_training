@@ -51,50 +51,49 @@ Trains a model for a single Optuna trial with pruning support.
 Example usage
 -------------
 
-Basic hyperparameter optimization:
+Basic hyperparameter optimization for MNIST:
 
 .. code-block:: python
 
    import optuna
+   from torchvision import datasets, transforms
    from image_classification_tools.pytorch.hyperparameter_optimization import create_objective
+
+   # Define transforms
+   transform = transforms.Compose([
+       transforms.ToTensor(),
+       transforms.Normalize((0.5,), (0.5,))
+   ])
 
    # Define search space
    search_space = {
-       'batch_size': [64, 128, 256, 512, 1024],
-       'n_conv_blocks': (1, 5),
-       'initial_filters': [8, 16, 32, 64, 128],
-       'n_fc_layers': (1, 8),
-       'base_kernel_size': (3, 7),
-       'conv_dropout_rate': (0.0, 0.5),
-       'fc_dropout_rate': (0.2, 0.75),
-       'pooling_strategy': ['max', 'avg'],
-       'use_batch_norm': [True, False],
-       'learning_rate': (1e-5, 1e-1, 'log'),
-       'optimizer': ['Adam', 'SGD', 'RMSprop'],
-       'sgd_momentum': (0.8, 0.99)
+       'batch_size': [64, 128, 256],
+       'n_conv_blocks': (1, 3),
+       'initial_filters': [16, 32],
+       'n_fc_layers': (1, 3),
+       'learning_rate': (1e-4, 1e-2, 'log'),
+       'optimizer': ['Adam', 'SGD']
    }
 
    # Create objective
    objective = create_objective(
-       data_dir='./data/cifar10',
+       data_dir='./data',
        train_transform=transform,
        eval_transform=transform,
-       n_epochs=50,
-       device=device,
+       n_epochs=20,
+       num_classes=10,
+       input_size=(1, 28, 28),
+       device='cuda',
        search_space=search_space
    )
 
    # Run optimization
-   study = optuna.create_study(
-       direction='maximize',
-       pruner=optuna.pruners.MedianPruner(n_warmup_steps=5)
-   )
-   
-   study.optimize(objective, n_trials=100, show_progress_bar=True)
+   study = optuna.create_study(direction='maximize')
+   study.optimize(objective, n_trials=50)
 
-   # Get best model
-   best_params = study.best_trial.params
+   # Get best parameters
    print(f"Best accuracy: {study.best_trial.value:.2f}%")
+   print("Best hyperparameters:", study.best_trial.params)
 
 With persistent storage:
 

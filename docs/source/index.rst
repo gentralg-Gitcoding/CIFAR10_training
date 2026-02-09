@@ -1,73 +1,86 @@
-CIFAR-10 Tools Documentation
-=============================
+Image Classification Tools Documentation
+=========================================
 
-**CIFAR-10 Tools** is a comprehensive PyTorch toolkit for building, training, and optimizing 
-convolutional neural networks (CNNs) for image classification on the CIFAR-10 dataset.
+**image-classification-tools** is a lightweight PyTorch toolkit for building and training image classification models.
 
-The package provides modular, reusable components for:
+The package provides utilities for:
 
-* **Data loading** with flexible preprocessing and augmentation
-* **Model training** with configurable architectures
-* **Hyperparameter optimization** using Optuna
-* **Evaluation and visualization** of model performance
+* Loading and preprocessing image datasets
+* Training models with validation tracking
+* Evaluating model performance
+* Visualizing results and metrics
+* Optimizing hyperparameters with Optuna
 
-Key features
+Who should use this
+-------------------
+
+This package is for developers who need to:
+
+* Build image classifiers for custom datasets
+* Prototype and compare different model architectures
+* Automate hyperparameter tuning
+* Evaluate and visualize model performance
+
+The API works with any image classification task, from small datasets like MNIST to larger custom collections.
+
+Installation
 ------------
 
-**Modular design**
-   Clean, composable functions for every stage of the ML pipeline
+.. code-block:: bash
 
-**Hyperparameter optimization**
-   Built-in Optuna integration with configurable search spaces
-
-**Rich visualizations**
-   Comprehensive plotting utilities for training curves, confusion matrices, and performance analysis
+   pip install image-classification-tools
 
 Quick example
 -------------
 
+Minimal example classifying MNIST digits:
+
 .. code-block:: python
 
-   import optuna
-   from image_classification_tools.pytorch.hyperparameter_optimization import create_objective
-   from torchvision import transforms
+   import torch
+   from torchvision import datasets, transforms
+   from image_classification_tools.pytorch.data import make_data_loaders
+   from image_classification_tools.pytorch.training import train_model
 
-   # Define input data transforms
+   # Load data
    transform = transforms.Compose([
        transforms.ToTensor(),
-       transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+       transforms.Normalize((0.5,), (0.5,))
    ])
-
-   # Define hyperparameter search space
-   search_space = {
-       'batch_size': [64, 128, 256, 512, 1024],
-       'learning_rate': (1e-5, 1e-1, 'log'),
-       'n_conv_blocks': [1, 2, 3, 4, 5]
-   }
-
-   # Create and optimize model
-   objective = create_objective(
-       data_dir='./data',
-       train_transform=transform,
-       eval_transform=transform,
-       n_epochs=50,
-       device='cuda',
-       search_space=search_space
-   )
    
-   study = optuna.create_study(direction='maximize')
-   study.optimize(objective, n_trials=100)
+   train_loader, val_loader, test_loader = make_data_loaders(
+       data_dir='./data',
+       dataset_class=datasets.MNIST,
+       batch_size=64,
+       train_transform=transform,
+       eval_transform=transform
+   )
 
-Getting started
----------------
+   # Define model
+   model = torch.nn.Sequential(
+       torch.nn.Flatten(),
+       torch.nn.Linear(784, 128),
+       torch.nn.ReLU(),
+       torch.nn.Linear(128, 10)
+   )
 
-To run the demo notebooks, clone the repository and use the provided devcontainer environment. To use the ``image_classification_tools`` package in your own projects, install from PyPI:
+   # Train
+   criterion = torch.nn.CrossEntropyLoss()
+   optimizer = torch.optim.Adam(model.parameters())
+   
+   history = train_model(
+       model=model,
+       train_loader=train_loader,
+       val_loader=val_loader,
+       criterion=criterion,
+       optimizer=optimizer,
+       epochs=10
+   )
 
-.. code-block:: bash
-    
-   pip install image_classification_tools
+Demo project
+------------
 
-See :doc:`installation` for detailed setup instructions.
+For a complete example, see the CIFAR-10 classification demo: https://github.com/gperdrizet/CIFAR10
 
 Documentation contents
 ----------------------
@@ -78,7 +91,6 @@ Documentation contents
 
    installation
    quickstart
-   notebooks/index
 
 .. toctree::
    :maxdepth: 2
@@ -91,7 +103,7 @@ Documentation contents
    :caption: Project links
 
    GitHub Repository <https://github.com/gperdrizet/CIFAR10>
-   PyPI Package <https://pypi.org/project/image_classification_tools>
+   PyPI Package <https://pypi.org/project/image-classification-tools>
    Issue Tracker <https://github.com/gperdrizet/CIFAR10/issues>
 
 Indices and tables

@@ -1,46 +1,116 @@
-# PyTorch: CIFAR-10 Demonstration
+# CIFAR-10 Image Classification Tutorial
 
 [![Publish to PyPI](https://github.com/gperdrizet/CIFAR10/actions/workflows/publish-to-pypi.yml/badge.svg)](https://github.com/gperdrizet/CIFAR10/actions/workflows/publish-to-pypi.yml)
 [![Deploy Documentation](https://github.com/gperdrizet/CIFAR10/actions/workflows/docs.yml/badge.svg)](https://github.com/gperdrizet/CIFAR10/actions/workflows/docs.yml)
 
-A progressive deep learning tutorial for image classification on the CIFAR-10 dataset using PyTorch. This project demonstrates the evolution from basic deep neural networks to optimized convolutional neural networks with data augmentation. It also provides a set of utility functions as a PyPI package for use in other projects.
+This repository demonstrates deep learning techniques for image classification using the CIFAR-10 benchmark dataset. Through a series of progressively more sophisticated models, it shows how different neural network architectures and training techniques improve classification performance.
 
-[View on PyPI](https://pypi.org/project/cifar10_tools) | [Documentation](https://gperdrizet.github.io/CIFAR10/)
+**Package**: The tools developed for this project are available as [`image-classification-tools`](https://pypi.org/project/image-classification-tools) on PyPI for use in your own projects.
 
-## Installation
+**Documentation**: [https://gperdrizet.github.io/CIFAR10/](https://gperdrizet.github.io/CIFAR10)
 
-Install the helper tools package locally in editable mode to use in this repository:
+## About the dataset
 
+CIFAR-10 consists of 60,000 32×32 color images across 10 classes:
+- **Training set**: 50,000 images (40,000 for training, 10,000 for validation)
+- **Test set**: 10,000 images
+- **Classes**: airplane, automobile, bird, cat, deer, dog, frog, horse, ship, truck
+
+## The models
+
+1. [`01-DNN.ipynb`](notebooks/01-DNN.ipynb) - Baseline fully-connected deep neural network on grayscale images
+2. [`02-CNN.ipynb`](notebooks/02-CNN.ipynb) - Convolutional neural network to exploit spatial relationships
+3. [`03-RGB-CNN.ipynb`](notebooks/03-RGB-CNN.ipynb) - CNN modified to process full RGB color information
+4. [`04-optimized-CNN.ipynb`](notebooks/04-optimized-CNN.ipynb) - Bayesian hyperparameter optimization with Optuna
+5. [`05-augmented-CNN.ipynb`](notebooks/05-augmented-CNN.ipynb) - Data augmentation for improved generalization
+
+## Visualizations
+
+Each experiment includes:
+
+- **Learning curves**: Track training and validation loss/accuracy over time
+- **Confusion matrices**: See which classes the model confuses
+- **Class probability distributions**: Understand model confidence
+- **ROC curves**: Measure classification performance across all classes
+- **Precision-recall curves**: Examine trade-offs for each class
+- **Optimization landscapes**: Visualize hyperparameter sensitivity (Experiment 4)
+
+## Getting started
+
+### Prerequisites
+
+- [Docker](https://www.docker.com/get-started)
+- [Visual Studio Code](https://code.visualstudio.com/)
+- [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+
+### Setup
+
+1. Clone the repository:
 ```bash
-pip install -e .
+git clone https://github.com/gperdrizet/CIFAR10.git
+cd CIFAR10
 ```
 
-Or install from PyPI to use in other projects:
-
+2. Open in VS Code:
 ```bash
-pip install cifar10_tools
+code .
 ```
 
-## Project overview
+3. When prompted, click **"Reopen in Container"** or use the command palette (Ctrl+Shift+P / Cmd+Shift+P) and select **"Dev Containers: Reopen in Container"**
 
-This repository contains a series of Jupyter notebooks that progressively build more sophisticated neural network architectures for the CIFAR-10 image classification task. Each notebook builds upon concepts from the previous one, demonstrating key deep learning techniques.
+4. Wait for the container to build and initialize (first time only). The devcontainer will:
+   - Set up the Python environment
+   - Install all dependencies
+   - Download the CIFAR-10 dataset
 
-## Notebooks
+### Running the notebooks
 
-| Notebook | Description |
-|----------|-------------|
-| [01-DNN.ipynb](notebooks/01-DNN.ipynb) | **Deep Neural Network** - Baseline fully-connected DNN classifier using `nn.Sequential`. Establishes a performance baseline with a simple architecture. |
-| [02-CNN.ipynb](notebooks/02-CNN.ipynb) | **Convolutional Neural Network** - Introduction to CNNs with convolutional and pooling layers using `nn.Sequential`. Demonstrates the advantage of CNNs over DNNs for image tasks. |
-| [03-RGB-CNN.ipynb](notebooks/03-RGB-CNN.ipynb) | **RGB CNN** - CNN classifier that utilizes full RGB color information instead of grayscale, improving feature extraction from color images. |
-| [04-optimized-CNN.ipynb](notebooks/04-optimized-CNN.ipynb) | **Hyperparameter Optimization** - Uses Optuna for automated hyperparameter tuning to find optimal network architecture and training parameters. |
-| [05-augmented-CNN.ipynb](notebooks/05-augmented-CNN.ipynb) | **Data Augmentation** - Trains the optimized CNN architecture with image augmentation techniques for improved generalization and robustness. |
+Once the container is ready, open and run notebooks in sequence:
+```bash
+jupyter notebook notebooks/01-DNN.ipynb
+```
 
-## Requirements
+### Pre-trained models
 
-- Python >=3.10, <3.13
-- PyTorch >=2.0
-- torchvision >=0.15
-- numpy >=1.24
+Models from each experiment are saved in `models/pytorch/`:
+- `dnn.pth` - Baseline DNN
+- `cnn.pth` - Basic CNN
+- `rgb_cnn.pth` - RGB CNN
+- `optimized_cnn.pth` - Hyperparameter-optimized CNN
+- `augmented_cnn.pth` - Final model with augmentation
+
+## Environment
+
+All experiments use:
+- Python 3.10+
+- PyTorch 2.0+
+- NVIDIA GPU with CUDA support (when available)
+
+## Dependencies
+
+Core requirements:
+- `python` ≥3.10, <3.13
+- `torch` ≥2.0
+- `torchvision` ≥0.15
+- `numpy` ≥1.24
+- `matplotlib` ≥3.7
+- `optuna` ≥3.0
+- `scikit-learn` ≥1.3
+
+See [`pyproject.toml`](pyproject.toml) for complete dependency specifications.
+
+## Citation
+
+If you find this project helpful for your learning or work, feel free to reference it:
+
+```bibtex
+@software{cifar10_tutorial,
+  author = {Perdrizet, George},
+  title = {CIFAR-10 Image Classification Tutorial},
+  year = {2024},
+  url = {https://github.com/gperdrizet/CIFAR10}
+}
+```
 
 ## License
 
