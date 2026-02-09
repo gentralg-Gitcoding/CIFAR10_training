@@ -19,33 +19,26 @@ def create_cnn(
     n_conv_blocks: int,
     initial_filters: int,
     n_fc_layers: int,
-    base_kernel_size: int,
     conv_dropout_rate: float,
     fc_dropout_rate: float,
-    pooling_strategy: str,
-    use_batch_norm: bool,
     num_classes: int,
-    in_channels: int = 3,
-    input_size: int = 32
+    in_channels: int = 3
 ) -> nn.Sequential:
     '''Create a CNN with configurable architecture.
     
-    This function builds a flexible CNN architecture suitable for various image 
-    classification tasks. The architecture is parameterized to work with different
-    input sizes, channel counts, and number of output classes.
+    This function builds a flexible CNN architecture with conv blocks that
+    progressively double filters (initial_filters -> 2x -> 4x -> 8x, etc.).
+    Each conv block contains: 2 Conv layers + BatchNorm + ReLU + MaxPool + Dropout.
+    Uses adaptive pooling before classifier to handle variable spatial dimensions.
     
     Args:
         n_conv_blocks: Number of convolutional blocks (1-5)
-        initial_filters: Number of filters in first conv layer (doubles each block)
-        n_fc_layers: Number of fully connected layers (1-8)
-        base_kernel_size: Base kernel size (decreases by 2 per block, min 3)
+        initial_filters: Number of filters in first conv block (doubles each block)
+        n_fc_layers: Number of fully connected layers before output (1-4)
         conv_dropout_rate: Dropout probability after convolutional blocks
         fc_dropout_rate: Dropout probability in fully connected layers
-        pooling_strategy: Pooling type ('max' or 'avg')
-        use_batch_norm: Whether to use batch normalization
         num_classes: Number of output classes (required)
         in_channels: Number of input channels (default: 3 for RGB images)
-        input_size: Input image size in pixels (default: 32, e.g., for CIFAR-10)
     
     Returns:
         nn.Sequential model
@@ -53,59 +46,40 @@ def create_cnn(
 
     layers = []
     current_channels = in_channels
-    current_size = input_size
     
     # Convolutional blocks
     for block_idx in range(n_conv_blocks):
         out_channels = initial_filters * (2 ** block_idx)
-        kernel_size = max(3, base_kernel_size - 2 * block_idx)
-        padding = kernel_size // 2
         
         # First conv in block
-        layers.append(nn.Conv2d(current_channels, out_channels, kernel_size=kernel_size, padding=padding))
-        # Update size after conv: output_size = (input_size + 2*padding - kernel_size) + 1
-        current_size = (current_size + 2 * padding - kernel_size) + 1
-
-        if use_batch_norm:
-            layers.append(nn.BatchNorm2d(out_channels))
-
+        layers.append(nn.Conv2d(current_channels, out_channels, kernel_size=3, padding=1))
+        layers.append(nn.BatchNorm2d(out_channels))
         layers.append(nn.ReLU())
         
         # Second conv in block
-        layers.append(nn.Conv2d(out_channels, out_channels, kernel_size=kernel_size, padding=padding))
-        current_size = (current_size + 2 * padding - kernel_size) + 1
-
-        if use_batch_norm:
-            layers.append(nn.BatchNorm2d(out_channels))
-
+        layers.append(nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1))
+        layers.append(nn.BatchNorm2d(out_channels))
         layers.append(nn.ReLU())
         
-        # Pooling
-        if pooling_strategy == 'max':
-            layers.append(nn.MaxPool2d(2, 2))
-        else:  # avg
-            layers.append(nn.AvgPool2d(2, 2))
-        
+        # Pooling and dropout
+        layers.append(nn.MaxPool2d(2, 2))
         layers.append(nn.Dropout(conv_dropout_rate))
         
         current_channels = out_channels
-        current_size //= 2  # Pooling halves the size
     
-    # Calculate flattened size using actual current_size
-    flattened_size = current_channels * current_size * current_size
-    
-    # Classifier - dynamic FC layers with halving pattern
+    # Classifier with adaptive pooling
+    layers.append(nn.AdaptiveAvgPool2d((1, 1)))
     layers.append(nn.Flatten())
     
-    # Generate FC layer sizes by halving from flattened_size
+    # Generate FC layer sizes by halving from current_channels
     fc_sizes = []
-    current_fc_size = flattened_size // 2
+    current_fc_size = current_channels // 2
     for _ in range(n_fc_layers):
-        fc_sizes.append(max(10, current_fc_size))  # Minimum 10 units
+        fc_sizes.append(max(32, current_fc_size))  # Minimum 32 units
         current_fc_size //= 2
     
     # Add FC layers
-    in_features = flattened_size
+    in_features = current_channels
     for fc_size in fc_sizes:
         layers.append(nn.Linear(in_features, fc_size))
         layers.append(nn.ReLU())
@@ -188,14 +162,12 @@ def create_objective(
     device: torch.device,
     num_classes: int,
     in_channels: int = 3,
-    input_size: int = 32,
     search_space: dict = None
 ) -> Callable[[optuna.Trial], float]:
     '''Create an Optuna objective function for CNN hyperparameter optimization.
     
     This factory function creates a closure that captures the data loading parameters
     and training configuration, returning an objective function suitable for Optuna.
-    The function is dataset-agnostic and works with any image classification task.
     
     Args:
         data_dir: Directory containing training data
@@ -203,9 +175,8 @@ def create_objective(
         eval_transform: Transform to apply to validation data
         n_epochs: Number of epochs per trial
         device: Device to train on (cuda or cpu)
-        num_classes: Number of output classes (required, e.g., 10 for CIFAR-10, 1000 for ImageNet)
+        num_classes: Number of output classes (required, e.g., 10 for CIFAR-10)
         in_channels: Number of input channels (default: 3 for RGB images, 1 for grayscale)
-        input_size: Input image size in pixels (default: 32, adjust for your dataset)
         search_space: Dictionary defining hyperparameter search space (default: None)
     
     Returns:
@@ -218,8 +189,7 @@ def create_objective(
         ...     eval_transform=transform,
         ...     n_epochs=50, 
         ...     device=device,
-        ...     num_classes=10,
-        ...     input_size=32
+        ...     num_classes=10
         ... )
         >>> study = optuna.create_study(direction='maximize')
         >>> study.optimize(objective, n_trials=100)
@@ -228,18 +198,16 @@ def create_objective(
     # Default search space if none provided
     if search_space is None:
         search_space = {
-            'batch_size': [64, 128, 256, 512, 1024],
+            'batch_size': [64, 128, 256, 512],
             'n_conv_blocks': (1, 5),
-            'initial_filters': [8, 16, 32, 64, 128],
-            'n_fc_layers': (1, 8),
-            'base_kernel_size': (3, 7),
-            'conv_dropout_rate': (0.0, 0.5),
-            'fc_dropout_rate': (0.2, 0.75),
-            'pooling_strategy': ['max', 'avg'],
-            'use_batch_norm': [True, False],
-            'learning_rate': (1e-5, 1e-1, 'log'),
+            'initial_filters': [16, 32, 64, 128],
+            'n_fc_layers': (1, 4),
+            'conv_dropout_rate': (0.1, 0.5),
+            'fc_dropout_rate': (0.3, 0.7),
+            'learning_rate': (1e-5, 1e-2, 'log'),
             'optimizer': ['Adam', 'SGD', 'RMSprop'],
-            'sgd_momentum': (0.8, 0.99)
+            'sgd_momentum': (0.8, 0.99),
+            'weight_decay': (1e-6, 1e-3, 'log')
         }
     
     def objective(trial: optuna.Trial) -> float:
@@ -250,11 +218,8 @@ def create_objective(
         n_conv_blocks = trial.suggest_int('n_conv_blocks', *search_space['n_conv_blocks'])
         initial_filters = trial.suggest_categorical('initial_filters', search_space['initial_filters'])
         n_fc_layers = trial.suggest_int('n_fc_layers', *search_space['n_fc_layers'])
-        base_kernel_size = trial.suggest_int('base_kernel_size', *search_space['base_kernel_size'])
         conv_dropout_rate = trial.suggest_float('conv_dropout_rate', *search_space['conv_dropout_rate'])
         fc_dropout_rate = trial.suggest_float('fc_dropout_rate', *search_space['fc_dropout_rate'])
-        pooling_strategy = trial.suggest_categorical('pooling_strategy', search_space['pooling_strategy'])
-        use_batch_norm = trial.suggest_categorical('use_batch_norm', search_space['use_batch_norm'])
         
         # Handle learning rate with optional log scale
         lr_params = search_space['learning_rate']
@@ -262,6 +227,11 @@ def create_objective(
                                            log=(lr_params[2] == 'log' if len(lr_params) > 2 else False))
         
         optimizer_name = trial.suggest_categorical('optimizer', search_space['optimizer'])
+        
+        # Weight decay
+        wd_params = search_space['weight_decay']
+        weight_decay = trial.suggest_float('weight_decay', wd_params[0], wd_params[1],
+                                          log=(wd_params[2] == 'log' if len(wd_params) > 2 else False))
         
         # Create data loaders with suggested batch size
         train_loader, val_loader, _ = make_data_loaders(
@@ -273,31 +243,28 @@ def create_objective(
             download=False
         )
         
-        # Create model
+        # Create model with suggested architecture
         model = create_cnn(
             n_conv_blocks=n_conv_blocks,
             initial_filters=initial_filters,
             n_fc_layers=n_fc_layers,
-            base_kernel_size=base_kernel_size,
             conv_dropout_rate=conv_dropout_rate,
             fc_dropout_rate=fc_dropout_rate,
-            pooling_strategy=pooling_strategy,
-            use_batch_norm=use_batch_norm,
             num_classes=num_classes,
-            in_channels=in_channels,
-            input_size=input_size
+            in_channels=in_channels
         ).to(device)
         
         # Define optimizer
         if optimizer_name == 'Adam':
-            optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+            optimizer = optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
 
         elif optimizer_name == 'SGD':
             momentum = trial.suggest_float('sgd_momentum', *search_space['sgd_momentum'])
-            optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=momentum)
+            optimizer = optim.SGD(model.parameters(), lr=learning_rate, 
+                                momentum=momentum, weight_decay=weight_decay)
         
         else:  # RMSprop
-            optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
+            optimizer = optim.RMSprop(model.parameters(), lr=learning_rate, weight_decay=weight_decay)
         
         criterion = nn.CrossEntropyLoss()
         
