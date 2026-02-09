@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 from torchvision import datasets
 
 from image_classification_tools.pytorch.data import (
-    load_datasets, prepare_splits, create_dataloaders
+    load_dataset, prepare_splits, create_dataloaders
 )
 
 
@@ -159,8 +159,7 @@ def train_trial(
 
 def create_objective(
     data_dir,
-    train_transform,
-    eval_transform,
+    transform,
     n_epochs: int,
     device: torch.device,
     num_classes: int,
@@ -174,8 +173,7 @@ def create_objective(
     
     Args:
         data_dir: Directory containing training data
-        train_transform: Transform to apply to training data
-        eval_transform: Transform to apply to validation data
+        transform: Transform to apply to both training and validation data
         n_epochs: Number of epochs per trial
         device: Device to train on (cuda or cpu)
         num_classes: Number of output classes (required, e.g., 10 for CIFAR-10)
@@ -188,8 +186,7 @@ def create_objective(
     Example:
         >>> objective = create_objective(
         ...     data_dir='data/', 
-        ...     train_transform=transform, 
-        ...     eval_transform=transform,
+        ...     transform=transform,
         ...     n_epochs=50, 
         ...     device=device,
         ...     num_classes=10
@@ -238,10 +235,18 @@ def create_objective(
         
         # Create data loaders with suggested batch size
         # Load datasets
-        train_dataset, test_dataset = load_datasets(
+        train_dataset = load_dataset(
             data_source=datasets.CIFAR10,
-            train_transform=train_transform,
-            eval_transform=eval_transform,
+            transform=transform,
+            train=True,
+            download=False,
+            root=data_dir
+        )
+        
+        test_dataset = load_dataset(
+            data_source=datasets.CIFAR10,
+            transform=transform,
+            train=False,
             download=False,
             root=data_dir
         )
@@ -250,7 +255,7 @@ def create_objective(
         train_dataset, val_dataset, _ = prepare_splits(
             train_dataset=train_dataset,
             test_dataset=test_dataset,
-            train_val_split=0.8
+            val_size=10000
         )
         
         # Create dataloaders with memory preloading

@@ -1,7 +1,7 @@
 '''PyTorch utilities for image classification.'''
 
 from image_classification_tools.pytorch.data import (
-    load_datasets,
+    load_dataset,
     prepare_splits,
     create_dataloaders,
     generate_augmented_data
@@ -24,7 +24,7 @@ from image_classification_tools.pytorch.hyperparameter_optimization import (
 
 __all__ = [
     # Data loading and preprocessing
-    'load_datasets',
+    'load_dataset',
     'prepare_splits',
     'create_dataloaders',
     'generate_augmented_data',

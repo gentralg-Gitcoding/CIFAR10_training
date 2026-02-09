@@ -29,7 +29,7 @@ def train_one_epoch(model, data_loader, criterion, optimizer, device, lazy_loadi
     correct = 0
     total = 0
     
-    for batch_idx, (images, labels) in enumerate(data_loader):
+    for _, (images, labels) in enumerate(data_loader):
         if lazy_loading:
             images, labels = images.to(device), labels.to(device)
         
@@ -115,6 +115,7 @@ def train_model(
     epoch_scheduler = None,
     lr_schedule: dict = None,
     epochs: int = 10,
+    enable_early_stopping: bool = False,
     early_stopping_patience: int = 10,
     print_every: int = 1
 ) -> dict[str, list[float]]:
@@ -137,8 +138,9 @@ def train_model(
                     {'initial_base_lr', 'initial_max_lr', 'final_base_lr', 
                      'final_max_lr', 'schedule_epochs'}
         epochs: Maximum number of epochs
+        enable_early_stopping: Whether to enable early stopping (default: False)
         early_stopping_patience: Stop if val_loss doesn't improve for this many epochs
-                                (ignored if val_loader is None)
+                                (only used if enable_early_stopping=True and val_loader is not None)
         print_every: Print progress every N epochs
     
     Returns:
@@ -188,8 +190,8 @@ def train_model(
             history['base_lrs'].append(cyclic_scheduler.base_lrs[0])
             history['max_lrs'].append(cyclic_scheduler.max_lrs[0])
         
-        # Early stopping (only if validation data is provided)
-        if val_loader is not None and val_loss is not None:
+        # Early stopping (only if validation data is provided and early stopping is enabled)
+        if enable_early_stopping and val_loader is not None and val_loss is not None:
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 epochs_without_improvement = 0
@@ -221,32 +223,33 @@ def train_model(
         
         # Print progress
         if (epoch + 1) % print_every == 0 or epoch == 0:
-            lr = optimizer.param_groups[0]['lr']
-            base_lr = cyclic_scheduler.base_lrs[0] if cyclic_scheduler else lr
-            max_lr = cyclic_scheduler.max_lrs[0] if cyclic_scheduler else lr
+            # Only show LR info if a scheduler is being used
+            if cyclic_scheduler is not None or epoch_scheduler is not None:
+                lr = optimizer.param_groups[0]['lr']
+                lr_info = f' - lr: {lr:.6f}'
+            else:
+                lr_info = ''
             
             if val_loader is not None:
                 print(
                     f'Epoch {epoch+1:3d}/{epochs} - '
                     f'loss: {train_loss:.4f} - acc: {train_acc:5.2f}% - '
-                    f'val_loss: {val_loss:.4f} - val_acc: {val_acc:5.2f}% - '
-                    f'lr: {lr:.2e} (base: {base_lr:.2e}, max: {max_lr:.2e})'
+                    f'val_loss: {val_loss:.4f} - val_acc: {val_acc:5.2f}%{lr_info}'
                 )
             else:
                 print(
                     f'Epoch {epoch+1:3d}/{epochs} - '
-                    f'loss: {train_loss:.4f} - acc: {train_acc:5.2f}% - '
-                    f'lr: {lr:.2e} (base: {base_lr:.2e}, max: {max_lr:.2e})'
+                    f'loss: {train_loss:.4f} - acc: {train_acc:5.2f}%{lr_info}'
                 )
         
-        # Check early stopping (only if validation data is provided)
-        if val_loader is not None and epochs_without_improvement >= early_stopping_patience:
+        # Check early stopping (only if validation data is provided and early stopping is enabled)
+        if enable_early_stopping and val_loader is not None and epochs_without_improvement >= early_stopping_patience:
             print(f'\nEarly stopping at epoch {epoch + 1}')
             print(f'Best val_loss: {best_val_loss:.4f} at epoch {epoch + 1 - epochs_without_improvement}')
             break
     
-    # Restore best model
-    if best_model_state is not None:
+    # Restore best model (only if early stopping was enabled)
+    if enable_early_stopping and best_model_state is not None:
         model.load_state_dict(best_model_state)
         print(f'Restored best model weights')
     
