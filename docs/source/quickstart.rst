@@ -26,7 +26,9 @@ This example shows the complete workflow using the MNIST dataset.
    from pathlib import Path
    import torch
    from torchvision import datasets, transforms
-   from image_classification_tools.pytorch.data import make_data_loaders
+   from image_classification_tools.pytorch.data import (
+       load_datasets, prepare_splits, create_dataloaders
+   )
 
    # Define preprocessing
    transform = transforms.Compose([
@@ -34,14 +36,29 @@ This example shows the complete workflow using the MNIST dataset.
        transforms.Normalize((0.5,), (0.5,))
    ])
 
-   # Create data loaders
-   train_loader, val_loader, test_loader = make_data_loaders(
-       data_dir=Path('./data'),
-       dataset_class=datasets.MNIST,
-       batch_size=128,
+   # Step 1: Load datasets
+   train_dataset, test_dataset = load_datasets(
+       data_source=datasets.MNIST,
        train_transform=transform,
        eval_transform=transform,
-       device='cuda' if torch.cuda.is_available() else 'cpu'
+       download=True,
+       root=Path('./data/mnist')
+   )
+
+   # Step 2: Prepare splits
+   train_dataset, val_dataset, test_dataset = prepare_splits(
+       train_dataset=train_dataset,
+       test_dataset=test_dataset,
+       train_val_split=0.8
+   )
+
+   # Step 3: Create dataloaders
+   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+   train_loader, val_loader, test_loader = create_dataloaders(
+       train_dataset, val_dataset, test_dataset,
+       batch_size=128,
+       preload_to_memory=True,
+       device=device
    )
 
 2. Define model
@@ -83,7 +100,7 @@ This example shows the complete workflow using the MNIST dataset.
        criterion=criterion,
        optimizer=optimizer,
        device=device,
-       lazy_loading=False,  # Data already on device from make_data_loaders
+       lazy_loading=False,  # Set to False when using preload_to_memory=True
        epochs=20,
        print_every=5
    )
@@ -124,14 +141,38 @@ For datasets in ImageFolder format:
 
 .. code-block:: python
 
+   from pathlib import Path
    from torchvision.datasets import ImageFolder
 
-   train_loader, val_loader, test_loader = make_data_loaders(
-       data_dir=Path('./my_dataset'),
-       dataset_class=ImageFolder,
-       batch_size=64,
+   # Define transform
+   transform = transforms.Compose([
+       transforms.Resize((224, 224)),
+       transforms.ToTensor(),
+       transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                          std=[0.229, 0.224, 0.225])
+   ])
+
+   # Load datasets from directory structure
+   train_dataset, test_dataset = load_datasets(
+       data_source=Path('./my_dataset'),
        train_transform=transform,
        eval_transform=transform
+   )
+
+   # If no test directory exists, use 3-way split
+   train_dataset, val_dataset, test_dataset = prepare_splits(
+       train_dataset=train_dataset,
+       test_dataset=test_dataset,  # Will be None if no test/ directory
+       train_val_split=0.8,
+       test_split=0.1  # Only used if test_dataset is None
+   )
+
+   # Create dataloaders
+   train_loader, val_loader, test_loader = create_dataloaders(
+       train_dataset, val_dataset, test_dataset,
+       batch_size=64,
+       preload_to_memory=False,  # Lazy loading for large datasets
+       num_workers=4
    )
 
 Your directory structure should be:
@@ -195,13 +236,26 @@ Improve generalization with data augmentation:
        transforms.Normalize((0.5,), (0.5,))
    ])
    
-   # Use different transforms for training and evaluation
-   train_loader, val_loader, test_loader = make_data_loaders(
-       data_dir=data_dir,
-       dataset_class=datasets.MNIST,
-       batch_size=128,
+   # Load with separate transforms
+   train_dataset, test_dataset = load_datasets(
+       data_source=datasets.MNIST,
        train_transform=train_transform,
-       eval_transform=eval_transform
+       eval_transform=eval_transform,
+       root=Path('./data/mnist')
+   )
+   
+   # Prepare splits
+   train_dataset, val_dataset, test_dataset = prepare_splits(
+       train_dataset, test_dataset, train_val_split=0.8
+   )
+   
+   # Create dataloaders with lazy loading (important for augmentation)
+   train_loader, val_loader, test_loader = create_dataloaders(
+       train_dataset, val_dataset, test_dataset,
+       batch_size=128,
+       preload_to_memory=False,  # Use lazy loading for on-the-fly augmentation
+       num_workers=4,
+       pin_memory=True
    )
 
 Hyperparameter optimization

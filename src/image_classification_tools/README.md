@@ -24,8 +24,11 @@ pip install image-classification-tools
 
 ```python
 import torch
+from pathlib import Path
 from torchvision import datasets, transforms
-from image_classification_tools.pytorch.data import make_data_loaders
+from image_classification_tools.pytorch.data import (
+    load_datasets, prepare_splits, create_dataloaders
+)
 from image_classification_tools.pytorch.training import train_model
 from image_classification_tools.pytorch.evaluation import evaluate_model
 
@@ -35,13 +38,29 @@ transform = transforms.Compose([
     transforms.Normalize((0.5,), (0.5,))
 ])
 
-# Create data loaders
-train_loader, val_loader, test_loader = make_data_loaders(
-    data_dir='./data',
-    dataset_class=datasets.MNIST,
-    batch_size=64,
+# Load datasets
+train_dataset, test_dataset = load_datasets(
+    data_source=datasets.MNIST,
     train_transform=transform,
-    eval_transform=transform
+    eval_transform=transform,
+    download=True,
+    root=Path('./data/mnist')
+)
+
+# Prepare splits
+train_dataset, val_dataset, test_dataset = prepare_splits(
+    train_dataset=train_dataset,
+    test_dataset=test_dataset,
+    train_val_split=0.8
+)
+
+# Create dataloaders
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+train_loader, val_loader, test_loader = create_dataloaders(
+    train_dataset, val_dataset, test_dataset,
+    batch_size=64,
+    preload_to_memory=True,
+    device=device
 )
 
 # Define model, criterion, optimizer
