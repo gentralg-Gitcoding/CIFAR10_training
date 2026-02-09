@@ -7,7 +7,7 @@ This repository demonstrates deep learning techniques for image classification u
 
 **Package**: The tools developed for this project are available as [`image-classification-tools`](https://pypi.org/project/image-classification-tools) on PyPI for use in your own projects.
 
-**Documentation**: [https://gperdrizet.github.io/CIFAR10/](https://gperdrizet.github.io/CIFAR10)
+**Documentation**: [gperdrizet.github.io/CIFAR10](https://gperdrizet.github.io/CIFAR10)
 
 ## About the dataset
 
