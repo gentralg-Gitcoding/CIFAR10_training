@@ -19,19 +19,19 @@ Core modules
 Module overview
 ---------------
 
-**Data loading** (:mod:`cifar10_tools.pytorch.data`)
+**Data loading** (:mod:`image_classification_tools.pytorch.data`)
    Functions for loading and preprocessing CIFAR-10 data with flexible transforms and batching.
 
-**Training** (:mod:`cifar10_tools.pytorch.training`)
+**Training** (:mod:`image_classification_tools.pytorch.training`)
    Utilities for model training with progress tracking and history logging.
 
-**Evaluation** (:mod:`cifar10_tools.pytorch.evaluation`)
+**Evaluation** (:mod:`image_classification_tools.pytorch.evaluation`)
    Functions for evaluating model performance and generating predictions.
 
-**Plotting** (:mod:`cifar10_tools.pytorch.plotting`)
+**Plotting** (:mod:`image_classification_tools.pytorch.plotting`)
    Visualization utilities for training curves, confusion matrices, and performance analysis.
 
-**Hyperparameter optimization** (:mod:`cifar10_tools.pytorch.hyperparameter_optimization`)
+**Hyperparameter optimization** (:mod:`image_classification_tools.pytorch.hyperparameter_optimization`)
    Optuna-based hyperparameter search with configurable architectures and search spaces.
 
 Complete module index

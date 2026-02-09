@@ -1,7 +1,7 @@
 Training
 ========
 
-.. automodule:: cifar10_tools.pytorch.training
+.. automodule:: image_classification_tools.pytorch.training
    :members:
    :undoc-members:
    :show-inheritance:
@@ -9,7 +9,7 @@ Training
 Functions
 ---------
 
-.. autofunction:: cifar10_tools.pytorch.training.train_model
+.. autofunction:: image_classification_tools.pytorch.training.train_model
 
 Overview
 --------
@@ -30,7 +30,7 @@ Basic training:
 .. code-block:: python
 
    import torch
-   from cifar10_tools.pytorch.training import train_model
+   from image_classification_tools.pytorch.training import train_model
 
    model = create_model()
    criterion = torch.nn.CrossEntropyLoss()

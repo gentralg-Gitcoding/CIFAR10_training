@@ -1,7 +1,7 @@
 Hyperparameter optimization
 ============================
 
-.. automodule:: cifar10_tools.pytorch.hyperparameter_optimization
+.. automodule:: image_classification_tools.pytorch.hyperparameter_optimization
    :members:
    :undoc-members:
    :show-inheritance:
@@ -56,7 +56,7 @@ Basic hyperparameter optimization:
 .. code-block:: python
 
    import optuna
-   from cifar10_tools.pytorch.hyperparameter_optimization import create_objective
+   from image_classification_tools.pytorch.hyperparameter_optimization import create_objective
 
    # Define search space
    search_space = {
@@ -120,7 +120,7 @@ Creating the final model:
 
 .. code-block:: python
 
-   from cifar10_tools.pytorch.hyperparameter_optimization import create_cnn
+   from image_classification_tools.pytorch.hyperparameter_optimization import create_cnn
 
    best_params = study.best_trial.params
 

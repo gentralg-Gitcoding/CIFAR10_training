@@ -1,7 +1,7 @@
 Evaluation
 ==========
 
-.. automodule:: cifar10_tools.pytorch.evaluation
+.. automodule:: image_classification_tools.pytorch.evaluation
    :members:
    :undoc-members:
    :show-inheritance:
@@ -9,7 +9,7 @@ Evaluation
 Functions
 ---------
 
-.. autofunction:: cifar10_tools.pytorch.evaluation.evaluate_model
+.. autofunction:: image_classification_tools.pytorch.evaluation.evaluate_model
 
 Overview
 --------
@@ -28,7 +28,7 @@ Basic evaluation:
 
 .. code-block:: python
 
-   from cifar10_tools.pytorch.evaluation import evaluate_model
+   from image_classification_tools.pytorch.evaluation import evaluate_model
 
    # Evaluate model
    test_accuracy, predictions, true_labels = evaluate_model(model, test_loader)
@@ -60,7 +60,7 @@ With visualization:
 
 .. code-block:: python
 
-   from cifar10_tools.pytorch.plotting import plot_confusion_matrix
+   from image_classification_tools.pytorch.plotting import plot_confusion_matrix
    import matplotlib.pyplot as plt
 
    test_accuracy, predictions, true_labels = evaluate_model(model, test_loader)

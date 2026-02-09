@@ -1,7 +1,7 @@
 Plotting
 ========
 
-.. automodule:: cifar10_tools.pytorch.plotting
+.. automodule:: image_classification_tools.pytorch.plotting
    :members:
    :undoc-members:
    :show-inheritance:
@@ -27,7 +27,7 @@ Learning curves:
 
 .. code-block:: python
 
-   from cifar10_tools.pytorch.plotting import plot_learning_curves
+   from image_classification_tools.pytorch.plotting import plot_learning_curves
    import matplotlib.pyplot as plt
 
    # After training
@@ -38,7 +38,7 @@ Confusion matrix:
 
 .. code-block:: python
 
-   from cifar10_tools.pytorch.plotting import plot_confusion_matrix
+   from image_classification_tools.pytorch.plotting import plot_confusion_matrix
 
    fig, ax = plot_confusion_matrix(true_labels, predictions, class_names)
    plt.title('Test Set Confusion Matrix')
@@ -48,7 +48,7 @@ Sample images:
 
 .. code-block:: python
 
-   from cifar10_tools.pytorch.plotting import plot_sample_images
+   from image_classification_tools.pytorch.plotting import plot_sample_images
 
    fig, axes = plot_sample_images(dataset, class_names, nrows=2, ncols=5)
    plt.show()
@@ -57,7 +57,7 @@ Class probability distributions:
 
 .. code-block:: python
 
-   from cifar10_tools.pytorch.plotting import plot_class_probability_distributions
+   from image_classification_tools.pytorch.plotting import plot_class_probability_distributions
 
    # Get predicted probabilities
    model.eval()
@@ -77,7 +77,7 @@ Evaluation curves:
 
 .. code-block:: python
 
-   from cifar10_tools.pytorch.plotting import plot_evaluation_curves
+   from image_classification_tools.pytorch.plotting import plot_evaluation_curves
 
    fig, (ax1, ax2) = plot_evaluation_curves(true_labels, all_probs, class_names)
    plt.show()
@@ -86,7 +86,7 @@ Optimization results:
 
 .. code-block:: python
 
-   from cifar10_tools.pytorch.plotting import plot_optimization_results
+   from image_classification_tools.pytorch.plotting import plot_optimization_results
 
    # After Optuna study
    fig, axes = plot_optimization_results(study)

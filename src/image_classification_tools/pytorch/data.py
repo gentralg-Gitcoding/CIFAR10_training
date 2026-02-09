@@ -1,4 +1,8 @@
-'''Data loading and preprocessing functions for CIFAR-10 dataset.'''
+'''Data loading and preprocessing functions for image classification datasets.
+
+This module provides utilities for loading datasets (including CIFAR-10) and creating
+PyTorch DataLoaders with support for custom transforms and device preloading.
+'''
 
 from pathlib import Path
 import torch
@@ -32,40 +36,51 @@ def make_data_loaders(
     eval_transform: transforms.Compose,
     device: torch.device | None = None,
     download: bool = False,
+    dataset_class = None,
+    train_val_split: float = 0.8,
 ):
     """
-    Loads CIFAR-10, applies preprocessing with separate train/eval transforms,
+    Loads image classification dataset, applies preprocessing with separate train/eval transforms,
     and returns DataLoaders.
     
+    This function supports torchvision datasets (like CIFAR-10, CIFAR-100, MNIST) and can work
+    with any dataset that follows the torchvision dataset interface.
+    
     Args:
-        data_dir: Path to CIFAR-10 data directory
+        data_dir: Path to data directory
         batch_size: Batch size for DataLoaders
         train_transform: Transform to apply to training data
         eval_transform: Transform to apply to validation and test data
         device: Device to preload tensors onto. If None, data stays on CPU 
                 and transforms are applied on-the-fly during iteration.
         download: Whether to download the dataset if not present
+        dataset_class: Dataset class to use (default: datasets.CIFAR10 for backward compatibility)
+        train_val_split: Fraction of training data to use for training (default: 0.8)
         
     Returns:
         Tuple of (train_loader, val_loader, test_loader)
     """
+    
+    # Default to CIFAR10 for backward compatibility
+    if dataset_class is None:
+        dataset_class = datasets.CIFAR10
 
     # Load datasets with respective transforms
-    train_dataset_full = datasets.CIFAR10(
+    train_dataset_full = dataset_class(
         root=data_dir,
         train=True,
         download=download,
         transform=train_transform,
     )
     
-    val_test_dataset_full = datasets.CIFAR10(
+    val_test_dataset_full = dataset_class(
         root=data_dir,
         train=True,
         download=download,
         transform=eval_transform,
     )
     
-    test_dataset = datasets.CIFAR10(
+    test_dataset = dataset_class(
         root=data_dir,
         train=False,
         download=download,
@@ -83,8 +98,8 @@ def make_data_loaders(
         X_test = torch.stack([img for img, _ in test_dataset]).to(device)
         y_test = torch.tensor([label for _, label in test_dataset]).to(device)
 
-        # Train/val split (80/20)
-        n_train = int(0.8 * len(X_train_full))
+        # Train/val split using specified ratio
+        n_train = int(train_val_split * len(X_train_full))
         indices = torch.randperm(len(X_train_full))
 
         X_train = X_train_full[indices[:n_train]]
@@ -99,8 +114,8 @@ def make_data_loaders(
         
     else:
         # Don't preload - use datasets directly for on-the-fly transforms
-        # Train/val split (80/20) using Subset
-        n_train = int(0.8 * len(train_dataset_full))
+        # Train/val split using specified ratio
+        n_train = int(train_val_split * len(train_dataset_full))
         indices = torch.randperm(len(train_dataset_full)).tolist()
         
         train_indices = indices[:n_train]

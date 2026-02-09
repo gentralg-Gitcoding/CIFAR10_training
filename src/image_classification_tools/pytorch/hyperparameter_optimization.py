@@ -12,7 +12,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from cifar10_tools.pytorch.data import make_data_loaders
+from image_classification_tools.pytorch.data import make_data_loaders
 
 
 def create_cnn(
@@ -24,11 +24,15 @@ def create_cnn(
     fc_dropout_rate: float,
     pooling_strategy: str,
     use_batch_norm: bool,
-    num_classes: int = 10,
+    num_classes: int,
     in_channels: int = 3,
     input_size: int = 32
 ) -> nn.Sequential:
     '''Create a CNN with configurable architecture.
+    
+    This function builds a flexible CNN architecture suitable for various image 
+    classification tasks. The architecture is parameterized to work with different
+    input sizes, channel counts, and number of output classes.
     
     Args:
         n_conv_blocks: Number of convolutional blocks (1-5)
@@ -39,9 +43,9 @@ def create_cnn(
         fc_dropout_rate: Dropout probability in fully connected layers
         pooling_strategy: Pooling type ('max' or 'avg')
         use_batch_norm: Whether to use batch normalization
-        num_classes: Number of output classes (default: 10 for CIFAR-10)
-        in_channels: Number of input channels (default: 3 for RGB)
-        input_size: Input image size (default: 32 for CIFAR-10)
+        num_classes: Number of output classes (required)
+        in_channels: Number of input channels (default: 3 for RGB images)
+        input_size: Input image size in pixels (default: 32, e.g., for CIFAR-10)
     
     Returns:
         nn.Sequential model
@@ -182,30 +186,41 @@ def create_objective(
     eval_transform,
     n_epochs: int,
     device: torch.device,
-    num_classes: int = 10,
+    num_classes: int,
     in_channels: int = 3,
+    input_size: int = 32,
     search_space: dict = None
 ) -> Callable[[optuna.Trial], float]:
     '''Create an Optuna objective function for CNN hyperparameter optimization.
     
     This factory function creates a closure that captures the data loading parameters
     and training configuration, returning an objective function suitable for Optuna.
+    The function is dataset-agnostic and works with any image classification task.
     
     Args:
-        data_dir: Directory containing CIFAR-10 data
+        data_dir: Directory containing training data
         train_transform: Transform to apply to training data
         eval_transform: Transform to apply to validation data
         n_epochs: Number of epochs per trial
         device: Device to train on (cuda or cpu)
-        num_classes: Number of output classes (default: 10)
-        in_channels: Number of input channels (default: 3 for RGB)
+        num_classes: Number of output classes (required, e.g., 10 for CIFAR-10, 1000 for ImageNet)
+        in_channels: Number of input channels (default: 3 for RGB images, 1 for grayscale)
+        input_size: Input image size in pixels (default: 32, adjust for your dataset)
         search_space: Dictionary defining hyperparameter search space (default: None)
     
     Returns:
         Objective function for optuna.Study.optimize()
     
     Example:
-        >>> objective = create_objective(data_dir, transform, transform, n_epochs=50, device=device)
+        >>> objective = create_objective(
+        ...     data_dir='data/', 
+        ...     train_transform=transform, 
+        ...     eval_transform=transform,
+        ...     n_epochs=50, 
+        ...     device=device,
+        ...     num_classes=10,
+        ...     input_size=32
+        ... )
         >>> study = optuna.create_study(direction='maximize')
         >>> study.optimize(objective, n_trials=100)
     '''
@@ -269,7 +284,8 @@ def create_objective(
             pooling_strategy=pooling_strategy,
             use_batch_norm=use_batch_norm,
             num_classes=num_classes,
-            in_channels=in_channels
+            in_channels=in_channels,
+            input_size=input_size
         ).to(device)
         
         # Define optimizer

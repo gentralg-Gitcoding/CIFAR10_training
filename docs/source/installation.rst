@@ -45,16 +45,16 @@ The repository includes a complete development container configuration that prov
 Installing the package only
 ----------------------------
 
-If you only need the ``cifar10_tools`` package without the demo notebooks and full development environment, install from PyPI:
+If you only need the ``image_classification_tools`` package without the demo notebooks and full development environment, install from PyPI:
 
 .. code-block:: bash
 
-   pip install cifar10_tools
+   pip install image_classification_tools
 
 Dependencies
 ------------
 
-Core dependencies for ``cifar10_tools`` package (automatically installed):
+Core dependencies for ``image_classification_tools`` package (automatically installed):
 
 * ``python`` >= 3.10, < 3.13
 * ``torch`` >= 2.0
@@ -75,10 +75,10 @@ To verify your installation:
 
 .. code-block:: python
 
-   import cifar10_tools
-   from cifar10_tools.pytorch.data import make_data_loaders
+   import image_classification_tools
+   from image_classification_tools.pytorch.data import make_data_loaders
    
-   print(f'cifar10_tools version: {cifar10_tools.__version__}')
+   print(f'image_classification_tools version: {image_classification_tools.__version__}')
 
 GPU Support
 -----------

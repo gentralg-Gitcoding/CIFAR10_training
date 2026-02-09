@@ -1,7 +1,7 @@
 Data loading
 ============
 
-.. automodule:: cifar10_tools.pytorch.data
+.. automodule:: image_classification_tools.pytorch.data
    :members:
    :undoc-members:
    :show-inheritance:
@@ -9,7 +9,7 @@ Data loading
 Functions
 ---------
 
-.. autofunction:: cifar10_tools.pytorch.data.make_data_loaders
+.. autofunction:: image_classification_tools.pytorch.data.make_data_loaders
 
 Overview
 --------
@@ -30,7 +30,7 @@ Basic data loading:
 
    from pathlib import Path
    from torchvision import transforms
-   from cifar10_tools.pytorch.data import make_data_loaders
+   from image_classification_tools.pytorch.data import make_data_loaders
 
    transform = transforms.Compose([
        transforms.ToTensor(),

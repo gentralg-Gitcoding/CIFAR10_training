@@ -5,7 +5,7 @@ This section contains a progressive series of Jupyter notebooks demonstrating th
 of the CIFAR-10 Tools package. Each notebook builds on the previous one, showcasing different 
 techniques and features.
 
-The notebooks serve as practical examples of using the ``cifar10_tools`` package for real-world 
+The notebooks serve as practical examples of using the ``image_classification_tools`` package for real-world 
 image classification tasks. They demonstrate data loading, model architecture design, training, 
 hyperparameter optimization, and evaluation.
 

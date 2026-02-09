@@ -29,7 +29,7 @@ Quick example
 .. code-block:: python
 
    import optuna
-   from cifar10_tools.pytorch.hyperparameter_optimization import create_objective
+   from image_classification_tools.pytorch.hyperparameter_optimization import create_objective
    from torchvision import transforms
 
    # Define input data transforms
@@ -61,11 +61,11 @@ Quick example
 Getting started
 ---------------
 
-To run the demo notebooks, clone the repository and use the provided devcontainer environment. To use the ``cifar10_tools`` package in your own projects, install from PyPI:
+To run the demo notebooks, clone the repository and use the provided devcontainer environment. To use the ``image_classification_tools`` package in your own projects, install from PyPI:
 
 .. code-block:: bash
     
-   pip install cifar10_tools
+   pip install image_classification_tools
 
 See :doc:`installation` for detailed setup instructions.
 
@@ -91,7 +91,7 @@ Documentation contents
    :caption: Project links
 
    GitHub Repository <https://github.com/gperdrizet/CIFAR10>
-   PyPI Package <https://pypi.org/project/cifar10_tools>
+   PyPI Package <https://pypi.org/project/image_classification_tools>
    Issue Tracker <https://github.com/gperdrizet/CIFAR10/issues>
 
 Indices and tables

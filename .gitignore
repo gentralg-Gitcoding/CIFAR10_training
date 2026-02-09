@@ -27,3 +27,6 @@ docs/source/_autosummary/
 # OS
 .DS_Store
 Thumbs.db
+
+DOCUMENTATION_UPDATE.md
+TODO.md

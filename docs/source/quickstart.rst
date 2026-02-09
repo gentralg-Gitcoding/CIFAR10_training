@@ -11,9 +11,9 @@ Here's a minimal example of training a CNN on CIFAR-10:
 .. code-block:: python
 
    from torchvision import transforms
-   from cifar10_tools.pytorch.data import make_data_loaders
-   from cifar10_tools.pytorch.hyperparameter_optimization import create_cnn
-   from cifar10_tools.pytorch.training import train_model
+   from image_classification_tools.pytorch.data import make_data_loaders
+   from image_classification_tools.pytorch.hyperparameter_optimization import create_cnn
+   from image_classification_tools.pytorch.training import train_model
    
    # Define input transforms
    transform = transforms.Compose([
@@ -64,7 +64,7 @@ Use Optuna to find the best hyperparameters:
 .. code-block:: python
 
    import optuna
-   from cifar10_tools.pytorch.hyperparameter_optimization import create_objective
+   from image_classification_tools.pytorch.hyperparameter_optimization import create_objective
    from torchvision import transforms
 
    # Define input transforms
@@ -122,7 +122,7 @@ Add data augmentation for improved generalization:
 .. code-block:: python
 
    import optuna
-   from cifar10_tools.pytorch.hyperparameter_optimization import create_objective
+   from image_classification_tools.pytorch.hyperparameter_optimization import create_objective
    from torchvision import transforms
 
    # Training transform with augmentation
@@ -157,8 +157,8 @@ Evaluate your model and visualize results:
 
 .. code-block:: python
 
-   from cifar10_tools.pytorch.evaluation import evaluate_model
-   from cifar10_tools.pytorch.plotting import (
+   from image_classification_tools.pytorch.evaluation import evaluate_model
+   from image_classification_tools.pytorch.plotting import (
        plot_learning_curves,
        plot_confusion_matrix,
        plot_evaluation_curves

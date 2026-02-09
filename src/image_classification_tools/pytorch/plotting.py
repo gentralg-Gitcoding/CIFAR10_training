@@ -1,4 +1,8 @@
-'''Plotting functions for CIFAR-10 models.'''
+'''Plotting functions for image classification models.
+
+This module provides visualization utilities for analyzing image classification models,
+including sample images, learning curves, confusion matrices, and evaluation metrics.
+'''
 
 import matplotlib.pyplot as plt
 import numpy as np

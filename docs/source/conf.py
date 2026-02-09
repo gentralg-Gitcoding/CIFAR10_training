@@ -9,11 +9,11 @@ sys.path.insert(0, os.path.abspath('../../src'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'CIFAR-10 Tools'
+project = 'Image Classification Tools'
 copyright = '2026, Dr. George Perdrizet'
 author = 'Dr. George Perdrizet'
-release = '0.4.0'
-version = '0.4.0'
+release = '0.5.5'
+version = '0.5.5'
 
 # -- General configuration ---------------------------------------------------
 

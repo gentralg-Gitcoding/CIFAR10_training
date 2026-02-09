@@ -3,13 +3,13 @@ requires = ["poetry-core>=1.9.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "cifar10_tools"
+name = "image-classification-tools"
 version = "0.5.5"
-description = "Tools for training neural networks on the CIFAR-10 task with PyTorch and TensorFlow"
+description = "General-purpose tools for training and evaluating image classification models with PyTorch"
 authors = ["gperdrizet <george@perdrizet.org>"]
 readme = "README.md"
 license = "GPLv3"
-packages = [{include = "cifar10_tools", from = "src"}]
+packages = [{include = "image_classification_tools", from = "src"}]
 exclude = ["notebooks", "models", "logs"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -25,7 +25,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Scientific/Engineering :: Image Recognition",
 ]
-keywords = ["Python", "Machine learning", "Deep learning", "CNNs", "Computer vision", "Image classification", "CIFAR-10"]
+keywords = ["Python", "Machine learning", "Deep learning", "CNNs", "Computer vision", "Image classification", "PyTorch", "Neural networks"]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.13"
@@ -52,4 +52,4 @@ Homepage = "https://github.com/gperdrizet/CIFAR10"
 Documentation = "https://gperdrizet.github.io/CIFAR10"
 Repository = "https://github.com/gperdrizet/CIFAR10"
 Issues = "https://github.com/gperdrizet/CIFAR10/issues"
-PyPI = "https://pypi.org/project/cifar10_tools"
+PyPI = "https://pypi.org/project/image-classification-tools"
