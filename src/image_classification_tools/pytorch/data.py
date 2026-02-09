@@ -4,7 +4,9 @@ This module provides utilities for loading datasets (including CIFAR-10) and cre
 PyTorch DataLoaders with support for custom transforms and device preloading.
 '''
 
+import os
 from pathlib import Path
+
 import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
@@ -143,6 +145,91 @@ def make_data_loaders(
     )
 
     return train_loader, val_loader, test_loader
+
+
+def generate_augmented_data(X_train, y_train, augmentation_transforms, augmentations_per_image, 
+                           save_path=None, force_reaugment=False):
+    '''Generate augmented training data with optional saving and loading.
+    
+    Args:
+        X_train: Training images tensor (on GPU or CPU)
+        y_train: Training labels tensor
+        augmentation_transforms: nn.Sequential containing augmentation transforms
+        augmentations_per_image: Number of augmented versions to create per image
+        save_path: Optional path to save/load augmented data
+        force_reaugment: If True, regenerate even if saved data exists
+    
+    Returns:
+        Tuple of (X_train_final, y_train_final) on CPU
+    '''
+    
+    # Move data to CPU for augmentation
+    X_train_cpu = X_train.cpu()
+    y_train_cpu = y_train.cpu()
+    
+    # Check if saved augmented data exists
+    if save_path and os.path.exists(save_path) and not force_reaugment:
+        print(f'Loading pre-generated augmented data from {save_path}...')
+        saved_data = torch.load(save_path)
+        X_train_final = saved_data['X_train']
+        y_train_final = saved_data['y_train']
+        
+        print(f'\nLoaded augmented training set:')
+        print(f'  Total size: {len(X_train_final)}')
+        print(f'  Original: {len(X_train_cpu)}')
+        print(f'  Added: {len(X_train_final) - len(X_train_cpu)}')
+        print(f'  Memory location: {X_train_final.device}')
+        print(f'  Augmentation factor: {len(X_train_final) / len(X_train_cpu):.1f}x')
+        
+    else:
+        if force_reaugment:
+            print('Forcing re-augmentation...')
+        else:
+            print('No saved augmented data found. Generating augmentations...')
+        
+        # Lists to collect augmented data on CPU
+        X_train_aug = [X_train_cpu]  # Start with original training data
+        y_train_aug = [y_train_cpu]
+        
+        # Generate augmented versions on CPU
+        # Apply transforms to each image individually to ensure independent transformations
+        for aug_idx in range(augmentations_per_image):
+            print(f'Creating augmentation batch {aug_idx + 1}/{augmentations_per_image}...')
+            
+            # Apply augmentations to each training image individually
+            X_aug_list = []
+            for img in X_train_cpu:
+                # Add batch dimension, apply transform, remove batch dimension
+                img_aug = augmentation_transforms(img.unsqueeze(0)).squeeze(0)
+                X_aug_list.append(img_aug)
+            
+            X_aug = torch.stack(X_aug_list)
+            
+            X_train_aug.append(X_aug)
+            y_train_aug.append(y_train_cpu)
+        
+        # Concatenate all training data (original + augmented) - stays on CPU
+        X_train_final = torch.cat(X_train_aug, dim=0)
+        y_train_final = torch.cat(y_train_aug, dim=0)
+        
+        print(f'\nAugmented training set size: {len(X_train_final)}')
+        print(f'  Added: {len(X_train_final) - len(X_train_cpu)}')
+        print(f'  Original: {len(X_train_cpu)}')
+        print(f'  Memory location: {X_train_final.device}')
+        print(f'  Augmentation factor: {len(X_train_final) / len(X_train_cpu):.1f}x')
+        
+        # Save augmented data for future use
+        if save_path:
+            print(f'\nSaving augmented data to {save_path}...')
+            torch.save({
+                'X_train': X_train_final,
+                'y_train': y_train_final,
+                'augmentations_per_image': augmentations_per_image,
+                'original_train_size': len(X_train_cpu)
+            }, save_path)
+            print('Augmented data saved successfully!')
+    
+    return X_train_final, y_train_final
 
 
 if __name__ == '__main__':

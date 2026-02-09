@@ -45,23 +45,27 @@ train_loader, val_loader, test_loader = make_data_loaders(
 )
 
 # Define model, criterion, optimizer
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 model = torch.nn.Sequential(
     torch.nn.Flatten(),
     torch.nn.Linear(784, 128),
     torch.nn.ReLU(),
     torch.nn.Linear(128, 10)
-)
+).to(device)
 
 criterion = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
-# Train
+# Train with lazy loading (moves batches to device during training)
 history = train_model(
     model=model,
     train_loader=train_loader,
     val_loader=val_loader,
     criterion=criterion,
     optimizer=optimizer,
+    device=device,
+    lazy_loading=True,  # Set False if data already on device
     epochs=10
 )
 
@@ -80,8 +84,13 @@ import optuna
 search_space = {
     'batch_size': [32, 64, 128],
     'n_conv_blocks': (1, 3),
+    'initial_filters': [16, 32, 64],
+    'n_fc_layers': (1, 3),
+    'conv_dropout_rate': (0.1, 0.5),
+    'fc_dropout_rate': (0.3, 0.7),
     'learning_rate': (1e-4, 1e-2, 'log'),
-    'optimizer': ['Adam', 'SGD']
+    'optimizer': ['Adam', 'SGD'],
+    'weight_decay': (1e-6, 1e-3, 'log')
 }
 
 # Create objective function
@@ -90,8 +99,9 @@ objective = create_objective(
     train_transform=transform,
     eval_transform=transform,
     n_epochs=20,
+    device=device,
     num_classes=10,
-    input_size=(1, 28, 28),
+    in_channels=1,
     search_space=search_space
 )
 
