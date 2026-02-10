@@ -77,13 +77,17 @@ def create_cnn(
     # Generate FC layer sizes by halving from current_channels
     fc_sizes = []
     current_fc_size = current_channels // 2
+
     for _ in range(n_fc_layers):
+
         fc_sizes.append(max(32, current_fc_size))  # Minimum 32 units
         current_fc_size //= 2
     
     # Add FC layers
     in_features = current_channels
+
     for fc_size in fc_sizes:
+
         layers.append(nn.Linear(in_features, fc_size))
         layers.append(nn.ReLU())
         layers.append(nn.Dropout(fc_dropout_rate))
@@ -194,21 +198,9 @@ def create_objective(
         >>> study = optuna.create_study(direction='maximize')
         >>> study.optimize(objective, n_trials=100)
     '''
-    
-    # Default search space if none provided
-    if search_space is None:
-        search_space = {
-            'batch_size': [64, 128, 256, 512],
-            'n_conv_blocks': (1, 5),
-            'initial_filters': [16, 32, 64, 128],
-            'n_fc_layers': (1, 4),
-            'conv_dropout_rate': (0.1, 0.5),
-            'fc_dropout_rate': (0.3, 0.7),
-            'learning_rate': (1e-5, 1e-2, 'log'),
-            'optimizer': ['Adam', 'SGD', 'RMSprop'],
-            'sgd_momentum': (0.8, 0.99),
-            'weight_decay': (1e-6, 1e-3, 'log')
-        }
+
+    if search_space == None:
+        return None
     
     def objective(trial: optuna.Trial) -> float:
         '''Optuna objective function for CNN hyperparameter optimization.'''
@@ -223,15 +215,17 @@ def create_objective(
         
         # Handle learning rate with optional log scale
         lr_params = search_space['learning_rate']
-        learning_rate = trial.suggest_float('learning_rate', lr_params[0], lr_params[1], 
-                                           log=(lr_params[2] == 'log' if len(lr_params) > 2 else False))
+        learning_rate = trial.suggest_float(
+            'learning_rate', lr_params[0], lr_params[1], log=(lr_params[2] == 'log' if len(lr_params) > 2 else False)
+        )
         
         optimizer_name = trial.suggest_categorical('optimizer', search_space['optimizer'])
         
         # Weight decay
         wd_params = search_space['weight_decay']
-        weight_decay = trial.suggest_float('weight_decay', wd_params[0], wd_params[1],
-                                          log=(wd_params[2] == 'log' if len(wd_params) > 2 else False))
+        weight_decay = trial.suggest_float(
+            'weight_decay', wd_params[0], wd_params[1], log=(wd_params[2] == 'log' if len(wd_params) > 2 else False)
+        )
         
         # Create data loaders with suggested batch size
         # Load datasets
