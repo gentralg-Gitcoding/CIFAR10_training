@@ -8,6 +8,7 @@ __pycache__/
 # Project data
 data/pytorch/cifar10/
 data/pytorch/cifar10_augmented/
+data/pytorch/cifar10_augmented_224/
 
 # Outputs
 logs/
@@ -28,7 +29,3 @@ docs/source/_autosummary/
 # OS
 .DS_Store
 Thumbs.db
-
-DOCUMENTATION_UPDATE.md
-TODO.md
-DATALOADING_SUMMARY.md
